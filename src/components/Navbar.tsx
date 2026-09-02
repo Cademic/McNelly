@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { nav, site } from '../data/site'
+import { mailtoConsult, nav, site } from '../data/site'
 import { useActiveSection } from '../hooks/useActiveSection'
 
 const SECTION_IDS = nav.map((n) => n.href.slice(1))
@@ -71,8 +71,8 @@ export function Navbar() {
           >
             {site.phone}
           </a>
-          <a href="#contact" className="btn-pine !px-5 !py-2.5 !text-sm">
-            Get a Quote
+          <a href={mailtoConsult} className="btn-pine !px-5 !py-2.5 !text-sm">
+            Book a Consultation
           </a>
         </div>
 
@@ -113,11 +113,11 @@ export function Navbar() {
               </motion.a>
             ))}
             <a
-              href="#contact"
+              href={mailtoConsult}
               onClick={() => setOpen(false)}
               className="block px-5 py-4 text-center text-sm font-semibold text-pine"
             >
-              Get a Quote →
+              Book a Consultation →
             </a>
           </motion.nav>
         )}

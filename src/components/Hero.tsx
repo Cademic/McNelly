@@ -9,7 +9,8 @@ import {
 import { hero, heroImages, heroStats } from '../data/site'
 
 const EASE = [0.16, 1, 0.3, 1] as const
-const AUTOPLAY_MS = 6500
+const AUTOPLAY_MS = 9000
+const CROSSFADE_S = 2.2
 const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
 
 const ArrowRight = () => (
@@ -59,16 +60,13 @@ export function Hero() {
   const parallaxY = useTransform(scrollY, [0, span], ['0%', '14%'])
   // Background image zooms in as you scroll down over the pinned hero.
   const bgScale = useTransform(scrollY, [0, span], [1, 1.45])
-  const contentY = useTransform(scrollY, [0, span * 0.6], [0, -48])
-  const contentOpacity = useTransform(scrollY, [0, span * 0.55], [1, 0])
-  const contentScale = useTransform(scrollY, [0, span], [1, 0.94])
-  const bandOpacity = useTransform(scrollY, [0, span * 0.45], [1, 0])
-  const bandY = useTransform(scrollY, [0, span * 0.5], [0, 40])
+  const contentY = useTransform(scrollY, [0, span * 1.1], [0, -48])
+  const contentOpacity = useTransform(scrollY, [span * 0.35, span * 1.05], [1, 0])
+  const contentScale = useTransform(scrollY, [0, span * 1.4], [1, 0.94])
 
   const coverStyle = reduced
     ? undefined
     : { y: contentY, opacity: contentOpacity, scale: contentScale }
-  const bandStyle = reduced ? undefined : { y: bandY, opacity: bandOpacity }
 
   const container = {
     hidden: {},
@@ -87,14 +85,56 @@ export function Hero() {
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
-      className="sticky top-nav z-0 isolate flex h-[calc(100svh_-_var(--spacing-nav))] flex-col overflow-hidden"
+      className="sticky top-nav z-0 isolate flex min-h-[calc(100svh_-_var(--spacing-nav))] flex-col overflow-hidden"
     >
-      {/* Headline block — sits at the TOP of the hero on the page's own misty
-          ground, with no photo behind it. The house photography lives in its
-          own panel below, so text and image never overlap (glideapps-style). */}
+      {/* Washed-back house photography with parallax + slow Ken Burns */}
+      <motion.div
+        className="absolute inset-0 -z-10"
+        style={reduced ? undefined : { y: parallaxY, scale: bgScale }}
+        aria-hidden="true"
+      >
+        <AnimatePresence>
+          <motion.div
+            key={index}
+            className="absolute inset-0"
+            initial={{ opacity: 0, scale: reduced ? 1 : 1.06 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              opacity: { duration: CROSSFADE_S, ease: 'easeInOut' },
+              scale: { duration: AUTOPLAY_MS / 1000 + 2, ease: 'linear' },
+            }}
+          >
+            <picture>
+              <source srcSet={webp(heroImages[index])} type="image/webp" />
+              <img
+                src={heroImages[index]}
+                alt=""
+                className="h-full w-full object-cover object-[center_32%] [filter:saturate(0.92)_brightness(1.03)]"
+                loading="eager"
+                fetchPriority="high"
+              />
+            </picture>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Calm wash so the image reads quiet and the ink stays legible.
+          Kept in the misty blue family (not pure white), stronger on the
+          left where the headline sits, clearing to the photo on the right. */}
+      <div
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-mist/40 via-transparent to-sand/55"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 -z-10 bg-gradient-to-r from-mist-2/92 via-mist-2/45 to-transparent sm:via-mist-2/35 sm:to-mist-2/0 lg:from-mist-2/88 lg:via-mist-2/25"
+        aria-hidden="true"
+      />
+
+      {/* Headline column — flex child so it never overlaps the foot band */}
       <motion.div
         style={coverStyle}
-        className="relative mx-auto w-full max-w-[1360px] shrink-0 px-5 pt-8 pb-6 lg:px-12 lg:pt-10 lg:pb-8"
+        className="relative mx-auto flex w-full max-w-[1360px] min-h-0 flex-1 flex-col justify-center gap-8 px-5 pb-12 pt-24 lg:px-12 lg:pb-16 lg:pt-28"
       >
         <motion.div variants={container} initial={reduced ? false : 'hidden'} animate="show">
           <motion.p variants={item} className="eyebrow text-clay">
@@ -102,7 +142,7 @@ export function Hero() {
           </motion.p>
           <motion.h1
             variants={item}
-            className="mt-4 max-w-3xl font-display text-[clamp(2rem,4.6vw,3.5rem)] font-medium leading-[1.04] tracking-[-0.03em] text-ink"
+            className="mt-5 max-w-3xl font-display text-[clamp(2.4rem,5.6vw,4.5rem)] font-medium leading-[1.03] tracking-[-0.03em] text-ink [text-shadow:0_1px_20px_rgba(247,248,243,0.6)]"
           >
             {hero.headline[0]}
             <br />
@@ -110,11 +150,11 @@ export function Hero() {
           </motion.h1>
           <motion.p
             variants={item}
-            className="mt-4 max-w-lg text-base font-medium leading-relaxed text-ink sm:text-lg"
+            className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-ink sm:text-xl"
           >
             {hero.sub}
           </motion.p>
-          <motion.div variants={item} className="mt-6 flex flex-wrap items-center gap-6">
+          <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-6">
             <a href={hero.primaryCta.href} className="btn-pine group">
               {hero.primaryCta.label}
               <span className="transition-transform duration-300 group-hover:translate-x-1">
@@ -132,51 +172,12 @@ export function Hero() {
             </a>
           </motion.div>
         </motion.div>
-      </motion.div>
 
-      {/* House photography — its own framed panel filling the space between
-          the headline block and the stats band. Parallax + slow Ken Burns. */}
-      <div className="relative mx-3 min-h-[40svh] flex-1 overflow-hidden rounded-[1.5rem] sm:mx-5 lg:mx-8">
-        <motion.div
-          className="absolute inset-0"
-          style={reduced ? undefined : { y: parallaxY, scale: bgScale }}
-          aria-hidden="true"
-        >
-          <AnimatePresence>
-            <motion.div
-              key={index}
-              className="absolute inset-0"
-              initial={{ opacity: 0, scale: reduced ? 1 : 1.06 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{
-                opacity: { duration: 1.4, ease: 'easeInOut' },
-                scale: { duration: AUTOPLAY_MS / 1000 + 2, ease: 'linear' },
-              }}
-            >
-              <picture>
-                <source srcSet={webp(heroImages[index])} type="image/webp" />
-                <img
-                  src={heroImages[index]}
-                  alt=""
-                  className="h-full w-full object-cover object-center [filter:saturate(0.96)]"
-                  loading="eager"
-                  fetchPriority="high"
-                />
-              </picture>
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/25 to-transparent"
-          aria-hidden="true"
-        />
         <motion.div
           variants={item}
           initial={reduced ? false : 'hidden'}
           animate="show"
-          className="absolute bottom-4 left-4 flex items-center gap-2.5 text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.55)] lg:bottom-5 lg:left-6"
+          className="flex items-center gap-3 text-ink-soft"
         >
           <motion.svg
             width="18"
@@ -194,14 +195,12 @@ export function Hero() {
           </motion.svg>
           <span className="eyebrow text-[11px]">Scroll to explore</span>
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Stats band — solid frosted band on the page ground, directly below
-          the photo panel. Normal flow, so it never overlaps anything above. */}
-      <motion.div
-        style={bandStyle}
-        className="relative z-10 shrink-0 border-t border-line bg-sand/80 backdrop-blur-md"
-      >
+      {/* Stats band — frosted glass panel, always visible at the foot of the
+          hero. Kept in normal flow as a flex child, so it can never overlap the
+          headline, copy or buttons in the column above it. */}
+      <div className="relative z-10 shrink-0 border-t border-white/40 bg-mist-2/45 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-5 py-8 lg:flex-row lg:items-center lg:gap-10 lg:px-12 lg:py-9">
           <dl className="grid flex-1 grid-cols-3 divide-x divide-line">
             {heroStats.map((s, i) => (
@@ -212,15 +211,12 @@ export function Hero() {
                 transition={{ delay: 0.9 + i * 0.12, duration: 0.7, ease: EASE }}
                 className={i === 0 ? 'pr-4' : 'px-4'}
               >
-                <dt className="flex items-baseline gap-1 font-display text-3xl font-medium tracking-tight text-ink sm:text-[2.6rem]">
+                <dt className="font-display text-lg font-medium tracking-tight text-ink sm:text-2xl">
                   {s.value}
-                  {s.suffix && (
-                    <span className="text-base font-normal text-ink-mute sm:text-lg">
-                      {s.suffix}
-                    </span>
-                  )}
                 </dt>
-                <dd className="mt-1 text-xs leading-snug text-ink-soft">{s.label}</dd>
+                <dd className="mt-1 text-[11px] leading-snug text-ink-soft sm:text-xs">
+                  {s.label}
+                </dd>
               </motion.div>
             ))}
           </dl>
@@ -229,7 +225,7 @@ export function Hero() {
             initial={reduced ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.3, duration: 0.7, ease: EASE }}
-            className="glass hidden max-w-md rounded-2xl p-5 lg:block lg:self-stretch"
+            className="glass hidden max-w-md rounded-2xl p-5 sm:block lg:self-stretch"
           >
             <p className="text-sm leading-relaxed text-ink-soft">{hero.note}</p>
             <a
@@ -243,7 +239,7 @@ export function Hero() {
             </a>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   )
 }

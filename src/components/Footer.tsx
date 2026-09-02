@@ -1,4 +1,4 @@
-import { nav, site } from '../data/site'
+import { mailtoConsult, nav, site } from '../data/site'
 
 export function Footer() {
   return (
@@ -29,7 +29,24 @@ export function Footer() {
                 {site.email}
               </a>
             </p>
-            <p className="mt-1 text-xs text-white/60">{site.hours}</p>
+            <div className="mt-3 flex gap-3">
+              <a
+                href={site.social.facebook}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-white/70 transition-colors hover:text-clay-soft"
+              >
+                Facebook
+              </a>
+              <a
+                href={site.social.instagram}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium text-white/70 transition-colors hover:text-clay-soft"
+              >
+                Instagram
+              </a>
+            </div>
           </div>
 
           <div>
@@ -44,24 +61,28 @@ export function Footer() {
                   {item.label}
                 </a>
               ))}
+              <a
+                href={mailtoConsult}
+                className="text-xs font-medium text-white/70 transition-colors hover:text-clay-soft"
+              >
+                Book a Consultation
+              </a>
             </nav>
           </div>
 
           <div>
             <p className="eyebrow text-clay-soft">Service area</p>
             <p className="mt-2.5 text-xs leading-relaxed text-white/70">
-              {site.serviceTowns.join(' · ')} and the surrounding {site.serviceArea}{' '}
-              communities.
+              Serving {site.serviceAreaLong}.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-1 pt-4 text-xs text-white/50 sm:flex-row sm:justify-between">
           <p>
-            &copy; {new Date().getFullYear()} {site.legalName}. Established{' '}
-            {site.established}.
+            &copy; {new Date().getFullYear()} {site.legalName}
           </p>
-          <p>{site.licenseNote} · Family-owned &amp; operated</p>
+          <p>Family-owned &amp; operated · {site.serviceArea}</p>
         </div>
       </div>
     </footer>

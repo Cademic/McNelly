@@ -1,8 +1,10 @@
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { Services } from './components/Services'
+import { Gallery } from './components/Gallery'
 import { About } from './components/About'
-import { Projects } from './components/Projects'
+import { CtaBand } from './components/CtaBand'
+import { Testimonials } from './components/Testimonials'
 import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
 
@@ -16,8 +18,10 @@ function App() {
             docks against the navbar. */}
         <div className="relative z-10 -mt-8 rounded-t-[2.5rem] bg-sand shadow-[0_-24px_60px_-30px_rgba(31,52,43,0.35)]">
           <Services />
+          <Gallery />
           <About />
-          <Projects />
+          <CtaBand />
+          <Testimonials />
           <Contact />
         </div>
       </main>

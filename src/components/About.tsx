@@ -19,18 +19,19 @@ export function About() {
           <Reveal>
             <p className="eyebrow text-clay-soft">The firm</p>
             <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-white">
-              A builder you can reach — and hold to the drawing.
+              Our commitment to excellence.
             </h2>
             <p className="mt-7 text-lg leading-relaxed text-white/80">
-              {site.legalName} is a family-owned, Christian-based general
-              contractor that has been building across Southeast Michigan since
-              the early 1990s. Thirty-plus years on, we still measure success the
-              same way: the building performs, the budget holds, and the family
-              calls us for the next project.
+              We are dedicated to delivering outstanding carpentry services that
+              exceed client expectations. Our experienced team of designers,
+              builders, trades, and project managers work together to ensure a
+              seamless renovation from concept to completion — focusing on
+              precision, quality, and client satisfaction.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
-              We keep our crews small and our communication direct. When you
-              call, you speak with the person running your build.
+              {site.legalName} is a family-owned general contractor rooted in
+              northeast Genesee County. When you call, you speak with the people
+              running your build.
             </p>
 
             <ul className="mt-10 border-t border-white/15">
@@ -47,7 +48,7 @@ export function About() {
             <dl className="mt-10 grid grid-cols-3 gap-4">
               {stats.map((s) => (
                 <div key={s.label} className="bg-white/10 px-4 py-5">
-                  <dt className="font-display text-2xl font-medium tracking-tight text-white sm:text-3xl">
+                  <dt className="font-display text-lg font-medium tracking-tight text-white sm:text-xl">
                     <CountUp value={s.value} disabled={!!reduced} />
                   </dt>
                   <dd className="mt-1.5 text-xs leading-snug text-white/60">{s.label}</dd>

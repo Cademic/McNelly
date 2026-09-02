@@ -9,13 +9,13 @@ export function Contact() {
         <div className="grid overflow-hidden border-y border-line bg-white/60 backdrop-blur-sm lg:grid-cols-[0.85fr_1.15fr]">
           <div className="bg-pine px-5 py-8 text-white sm:px-8 lg:px-10">
             <div className="ml-auto max-w-xl lg:max-w-lg">
-              <p className="eyebrow text-clay-soft">Contact</p>
+              <p className="eyebrow text-clay-soft">Book a Consultation</p>
               <h2 className="mt-3 font-display text-[clamp(1.6rem,3vw,2.25rem)] font-medium leading-tight text-white">
-                Ready to start your project?
+                Ready to make your dream a reality?
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-white/80">
-                Send us an email with a few details. We respond within one
-                business day with next steps and a timeline.
+                Send us an email with a few details about your project and we’ll
+                be in touch to set up a consultation.
               </p>
 
               <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4">
@@ -27,14 +27,22 @@ export function Contact() {
                     {site.phone}
                   </a>
                 </ContactRow>
-                <ContactRow label="Hours">{site.hours}</ContactRow>
                 <ContactRow label="Office">
                   {site.address.street}
                   <br />
                   {site.address.locality}
                 </ContactRow>
                 <ContactRow label="Service area">
-                  <span className="text-white/85">{site.serviceTowns.join(' · ')}</span>
+                  <span className="text-white/85">{site.serviceAreaLong}</span>
+                </ContactRow>
+                <ContactRow label="Follow">
+                  <a href={site.social.facebook} className="hover:text-clay-soft" target="_blank" rel="noreferrer">
+                    Facebook
+                  </a>
+                  {' · '}
+                  <a href={site.social.instagram} className="hover:text-clay-soft" target="_blank" rel="noreferrer">
+                    Instagram
+                  </a>
                 </ContactRow>
               </dl>
             </div>
