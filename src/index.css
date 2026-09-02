@@ -2,21 +2,16 @@
 
 /*
  * "Still Water" — McNelly Construction design system.
- * Calm architectural minimalism: a misty blue-to-sand gradient ground,
- * deep-pine ink, soft rounded geometry, frosted glass panels, and
- * house photography washed back so it reads quiet rather than loud.
+ * Calm architectural minimalism: a soft sand ground, deep-pine ink,
+ * rounded geometry, and house photography washed back so it reads
+ * quiet rather than loud.
  */
 @theme {
   --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
 
   /* Atmospheric ground */
-  --color-mist: #c4d6dd;
-  --color-mist-2: #d7e2e0;
   --color-sand: #eef0e9;
-  --color-surface: #f7f8f3;
-  --color-surface-2: #ffffff;
-  --color-blueprint: #eef2f1;
 
   /* Ink — deep pine */
   --color-ink: #294238;
@@ -27,7 +22,6 @@
   --color-pine: #2f4a3f;
   --color-pine-2: #37564a;
   --color-pine-deep: #1f342b;
-  --color-pine-soft: #9fb5a9;
 
   /* Warm accent — used sparingly, the parasol red */
   --color-clay: #bd5f3d;
@@ -36,17 +30,7 @@
   /* Lines */
   --color-line: rgba(41, 66, 56, 0.14);
   --color-line-strong: rgba(41, 66, 56, 0.28);
-  --color-error: #ba1a1a;
 
-  /* Soft rounded geometry everywhere */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.75rem;
-  --radius-2xl: 2.25rem;
-  --radius-3xl: 3rem;
-
-  --spacing-section: 120px;
   /* Sticky navbar height — the pinned hero sits directly below this and the
      rounded page body docks against it as it scrolls up. */
   --spacing-nav: 4.5rem;
@@ -58,8 +42,7 @@
   }
 
   body {
-    background: linear-gradient(180deg, var(--color-mist) 0%, var(--color-mist-2) 30%, var(--color-sand) 70%);
-    background-attachment: fixed;
+    background: var(--color-sand);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 16px;
@@ -103,14 +86,6 @@
     text-transform: uppercase;
   }
 
-  /* Frosted glass panel */
-  .glass {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(16px) saturate(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-  }
-
   /* Pill button — primary */
   .btn-pine {
     display: inline-flex;
@@ -139,12 +114,23 @@
     content: '';
     position: absolute;
     left: 0;
-    top: 0.62em;
+    top: 50%;
+    transform: translateY(-50%);
     width: 7px;
     height: 7px;
     border-radius: 999px;
     background: var(--color-clay);
   }
+}
+
+/* Draggable / swipeable testimonial carousel — scrolls horizontally with
+   finger or trackpad; the scrollbar itself is hidden. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Scroll reveals are handled by Motion in src/components/Reveal.tsx. */

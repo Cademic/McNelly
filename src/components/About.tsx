@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion, useInView, useReducedMotion, useScroll, useTransform } from 'motion/react'
-import { commitments, site, stats } from '../data/site'
+import { useRef } from 'react'
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
+import { commitments, stats } from '../data/site'
 import { Reveal } from './Reveal'
 
 export function About() {
@@ -18,20 +18,19 @@ export function About() {
         <div className="mx-auto grid max-w-[1360px] gap-16 px-5 py-20 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12 lg:py-24">
           <Reveal>
             <p className="eyebrow text-clay-soft">The firm</p>
-            <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-white">
+            <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-white sm:whitespace-nowrap">
               Our commitment to excellence.
             </h2>
             <p className="mt-7 text-lg leading-relaxed text-white/80">
-              We are dedicated to delivering outstanding carpentry services that
-              exceed client expectations. Our experienced team of designers,
-              builders, trades, and project managers work together to ensure a
-              seamless renovation from concept to completion — focusing on
-              precision, quality, and client satisfaction.
+              At McNelly Construction, we take pride in delivering superior
+              construction services. With our skilled team and commitment to
+              excellence, we are dedicated to bringing your construction projects
+              to life.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
-              {site.legalName} is a family-owned general contractor rooted in
-              northeast Genesee County. When you call, you speak with the people
-              running your build.
+              Located in northeast Genesee County, we serve our local community
+              and the surrounding areas. Let us make your dream a reality. Book a
+              consultation with us today.
             </p>
 
             <ul className="mt-10 border-t border-white/15">
@@ -49,7 +48,7 @@ export function About() {
               {stats.map((s) => (
                 <div key={s.label} className="bg-white/10 px-4 py-5">
                   <dt className="font-display text-lg font-medium tracking-tight text-white sm:text-xl">
-                    <CountUp value={s.value} disabled={!!reduced} />
+                    {s.value}
                   </dt>
                   <dd className="mt-1.5 text-xs leading-snug text-white/60">{s.label}</dd>
                 </div>
@@ -79,35 +78,4 @@ export function About() {
       </div>
     </section>
   )
-}
-
-/** Animates the leading integer of `value` from 0 on first view, keeping any prefix/suffix. */
-function CountUp({ value, disabled }: { value: string; disabled: boolean }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: '0px 0px -20% 0px' })
-  const parts = useMemo(() => {
-    const m = value.match(/^(\D*)(\d+)(.*)$/)
-    return m ? { prefix: m[1], target: Number(m[2]), suffix: m[3] } : null
-  }, [value])
-  const [display, setDisplay] = useState(
-    disabled || !parts ? value : `${parts.prefix}0${parts.suffix}`,
-  )
-
-  useEffect(() => {
-    if (disabled || !parts || !inView) return
-    const { prefix, target, suffix } = parts
-    const duration = 1100
-    const start = performance.now()
-    let raf = 0
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration)
-      const eased = 1 - Math.pow(1 - t, 3)
-      setDisplay(`${prefix}${Math.round(eased * target)}${suffix}`)
-      if (t < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [inView, disabled, parts])
-
-  return <span ref={ref}>{display}</span>
 }

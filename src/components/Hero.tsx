@@ -6,12 +6,11 @@ import {
   useScroll,
   useTransform,
 } from 'motion/react'
-import { hero, heroImages, heroStats } from '../data/site'
+import { hero, heroImages } from '../data/site'
 
 const EASE = [0.16, 1, 0.3, 1] as const
-const AUTOPLAY_MS = 9000
-const CROSSFADE_S = 2.2
-const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
+const AUTOPLAY_MS = 8000
+const CROSSFADE_S = 0.8
 
 const ArrowRight = () => (
   <svg
@@ -33,19 +32,24 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
   const reduced = useReducedMotion()
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
   const count = heroImages.length
 
+  // Always cycle on the timer for as long as the page is open — no pause on
+  // hover/focus, and it runs even when the user prefers reduced motion (the
+  // crossfade itself just becomes a plain opacity fade in that case).
   useEffect(() => {
-    if (reduced || paused) return
     const t = setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS)
     return () => clearInterval(t)
-  }, [reduced, paused, count])
+  }, [count])
 
-  // Scroll-driven motion. The hero is `position: sticky`, so measuring it with
-  // useScroll({ target }) barely moves while it's pinned. Instead we drive
-  // everything off the raw window scroll over the hero's own height — exactly
-  // the distance during which the rounded page body rises to cover it.
+  // Scroll-driven motion. The hero is `position: sticky`, so it stays pinned in
+  // the viewport for roughly its own height of scrolling while the rounded page
+  // body rises to cover it. We drive everything off raw window scroll over that
+  // span:
+  //   • the house cut-out scales up (zoom) from the bottom edge
+  //   • the headline column translates up 1:1 with scroll — so it reads as
+  //     normal page scrolling off the top, while the image stays put and zooms
+  //     (the Glide hero effect).
   const { scrollY } = useScroll()
   const [heroH, setHeroH] = useState(0)
   useEffect(() => {
@@ -57,16 +61,16 @@ export function Hero() {
   }, [])
   const span = heroH || 1
 
-  const parallaxY = useTransform(scrollY, [0, span], ['0%', '14%'])
-  // Background image zooms in as you scroll down over the pinned hero.
-  const bgScale = useTransform(scrollY, [0, span], [1, 1.45])
-  const contentY = useTransform(scrollY, [0, span * 1.1], [0, -48])
-  const contentOpacity = useTransform(scrollY, [span * 0.35, span * 1.05], [1, 0])
-  const contentScale = useTransform(scrollY, [0, span * 1.4], [1, 0.94])
+  const imgScale = useTransform(scrollY, [0, span], [1, 1.55])
+  const imgY = useTransform(scrollY, [0, span], ['0%', '-4%'])
+  // Headline scrolls up at (almost) natural speed and fades out near the end.
+  const textY = useTransform(scrollY, [0, span], [0, -span * 0.96])
+  const textOpacity = useTransform(scrollY, [span * 0.55, span * 0.92], [1, 0])
 
-  const coverStyle = reduced
+  const textStyle = reduced ? undefined : { y: textY, opacity: textOpacity }
+  const imgStyle = reduced
     ? undefined
-    : { y: contentY, opacity: contentOpacity, scale: contentScale }
+    : { scale: imgScale, y: imgY, transformOrigin: 'center bottom' }
 
   const container = {
     hidden: {},
@@ -81,23 +85,20 @@ export function Hero() {
     <section
       id="top"
       ref={sectionRef}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
-      className="sticky top-nav z-0 isolate flex min-h-[calc(100svh_-_var(--spacing-nav))] flex-col overflow-hidden"
+      className="sticky top-nav z-0 isolate flex min-h-[calc(100svh_-_var(--spacing-nav))] flex-col overflow-hidden bg-sand"
     >
-      {/* Washed-back house photography with parallax + slow Ken Burns */}
+      {/* Zooming house cut-out, anchored near the foot of the hero so it grows
+          upward into the frame as you scroll. */}
       <motion.div
-        className="absolute inset-0 -z-10"
-        style={reduced ? undefined : { y: parallaxY, scale: bgScale }}
+        className="pointer-events-none absolute inset-x-0 bottom-[9vh] sm:bottom-[clamp(0px,2vh,40px)] -z-10"
+        style={imgStyle}
         aria-hidden="true"
       >
         <AnimatePresence>
           <motion.div
             key={index}
-            className="absolute inset-0"
-            initial={{ opacity: 0, scale: reduced ? 1 : 1.06 }}
+            className="absolute inset-x-0 bottom-0 flex justify-center"
+            initial={{ opacity: 0, scale: reduced ? 1 : 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{
@@ -106,11 +107,11 @@ export function Hero() {
             }}
           >
             <picture>
-              <source srcSet={webp(heroImages[index])} type="image/webp" />
+              <source srcSet={heroImages[index].replace(/\.png$/, '.webp')} type="image/webp" />
               <img
                 src={heroImages[index]}
                 alt=""
-                className="h-full w-full object-cover object-[center_32%] [filter:saturate(0.92)_brightness(1.03)]"
+                className="w-full max-w-[1700px] max-h-[56vh] object-contain object-bottom drop-shadow-[0_36px_60px_rgba(30,41,37,0.22)]"
                 loading="eager"
                 fetchPriority="high"
               />
@@ -119,24 +120,17 @@ export function Hero() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Calm wash so the image reads quiet and the ink stays legible.
-          Kept in the misty blue family (not pure white), stronger on the
-          left where the headline sits, clearing to the photo on the right. */}
-      <div
-        className="absolute inset-0 -z-10 bg-gradient-to-b from-mist/40 via-transparent to-sand/55"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute inset-0 -z-10 bg-gradient-to-r from-mist-2/92 via-mist-2/45 to-transparent sm:via-mist-2/35 sm:to-mist-2/0 lg:from-mist-2/88 lg:via-mist-2/25"
-        aria-hidden="true"
-      />
-
       {/* Headline column — flex child so it never overlaps the foot band */}
       <motion.div
-        style={coverStyle}
-        className="relative mx-auto flex w-full max-w-[1360px] min-h-0 flex-1 flex-col justify-center gap-8 px-5 pb-12 pt-24 lg:px-12 lg:pb-16 lg:pt-28"
+        style={textStyle}
+        className="relative mx-auto mt-0 flex w-full max-w-[1360px] min-h-0 flex-1 flex-col items-center justify-start gap-6 px-5 pb-12 pt-[13vh] text-center sm:pt-0 lg:-mt-6 lg:px-12 lg:pb-16 lg:pt-0"
       >
-        <motion.div variants={container} initial={reduced ? false : 'hidden'} animate="show">
+        <motion.div
+          variants={container}
+          initial={reduced ? false : 'hidden'}
+          animate="show"
+          className="flex flex-col items-center"
+        >
           <motion.p variants={item} className="eyebrow text-clay">
             {hero.eyebrow}
           </motion.p>
@@ -148,13 +142,7 @@ export function Hero() {
             <br />
             {hero.headline[1]}
           </motion.h1>
-          <motion.p
-            variants={item}
-            className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-ink sm:text-xl"
-          >
-            {hero.sub}
-          </motion.p>
-          <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-6">
+          <motion.div variants={item} className="mt-7 flex flex-wrap items-center justify-center gap-6">
             <a href={hero.primaryCta.href} className="btn-pine group">
               {hero.primaryCta.label}
               <span className="transition-transform duration-300 group-hover:translate-x-1">
@@ -172,74 +160,7 @@ export function Hero() {
             </a>
           </motion.div>
         </motion.div>
-
-        <motion.div
-          variants={item}
-          initial={reduced ? false : 'hidden'}
-          animate="show"
-          className="flex items-center gap-3 text-ink-soft"
-        >
-          <motion.svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            animate={reduced ? undefined : { y: [0, 5, 0] }}
-            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <path d="M12 5v14M6 13l6 6 6-6" />
-          </motion.svg>
-          <span className="eyebrow text-[11px]">Scroll to explore</span>
-        </motion.div>
       </motion.div>
-
-      {/* Stats band — frosted glass panel, always visible at the foot of the
-          hero. Kept in normal flow as a flex child, so it can never overlap the
-          headline, copy or buttons in the column above it. */}
-      <div className="relative z-10 shrink-0 border-t border-white/40 bg-mist-2/45 backdrop-blur-xl backdrop-saturate-150">
-        <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-5 py-8 lg:flex-row lg:items-center lg:gap-10 lg:px-12 lg:py-9">
-          <dl className="grid flex-1 grid-cols-3 divide-x divide-line">
-            {heroStats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={reduced ? false : { opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + i * 0.12, duration: 0.7, ease: EASE }}
-                className={i === 0 ? 'pr-4' : 'px-4'}
-              >
-                <dt className="font-display text-lg font-medium tracking-tight text-ink sm:text-2xl">
-                  {s.value}
-                </dt>
-                <dd className="mt-1 text-[11px] leading-snug text-ink-soft sm:text-xs">
-                  {s.label}
-                </dd>
-              </motion.div>
-            ))}
-          </dl>
-
-          <motion.div
-            initial={reduced ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3, duration: 0.7, ease: EASE }}
-            className="glass hidden max-w-md rounded-2xl p-5 sm:block lg:self-stretch"
-          >
-            <p className="text-sm leading-relaxed text-ink-soft">{hero.note}</p>
-            <a
-              href="#about"
-              className="group mt-3 inline-flex items-center gap-2 text-sm font-semibold text-ink transition-colors hover:text-clay"
-            >
-              Discover more
-              <span className="transition-transform duration-300 group-hover:translate-x-1">
-                <ArrowRight />
-              </span>
-            </a>
-          </motion.div>
-        </div>
-      </div>
     </section>
   )
 }

@@ -2,41 +2,58 @@ import { useEffect, useState } from 'react'
 
 /**
  * Tracks which section id is currently dominant in the viewport, for nav
- * highlighting. Returns the active id (without `#`), or '' before any section
- * has been observed.
+ * highlighting. `ids` must be listed in the order the sections appear on the
+ * page. Returns the active id (without `#`).
+ *
+ * Uses scroll position rather than IntersectionObserver so that short trailing
+ * sections (e.g. Contact) still activate when the page can't scroll far enough
+ * to bring them to the middle of the viewport.
  */
 export function useActiveSection(ids: readonly string[]): string {
-  const [active, setActive] = useState('')
+  const [active, setActive] = useState(ids[0] ?? '')
 
   useEffect(() => {
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null)
+    let frame = 0
 
-    if (elements.length === 0) return
+    const update = () => {
+      frame = 0
+      const els = ids
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null)
+      if (els.length === 0) return
 
-    const visible = new Map<string, number>()
+      const doc = document.documentElement
+      const atBottom =
+        window.innerHeight + window.scrollY >= doc.scrollHeight - 2
+      if (atBottom) {
+        setActive(els[els.length - 1].id)
+        return
+      }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          visible.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0)
-        }
-        let bestId = ''
-        let bestRatio = 0
-        for (const [id, ratio] of visible) {
-          if (ratio > bestRatio) {
-            bestRatio = ratio
-            bestId = id
-          }
-        }
-        if (bestId) setActive(bestId)
-      },
-      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] },
-    )
+      // The section whose top has most recently crossed a line ~35% down
+      // the viewport is the one being read.
+      const line = window.scrollY + window.innerHeight * 0.35
+      let current = els[0].id
+      for (const el of els) {
+        const top = el.getBoundingClientRect().top + window.scrollY
+        if (top <= line) current = el.id
+        else break
+      }
+      setActive(current)
+    }
 
-    elements.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [ids])
 
   return active

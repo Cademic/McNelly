@@ -10,13 +10,9 @@ export function Services() {
         <Reveal>
           <p className="eyebrow text-clay">What we do</p>
           <div className="mt-5 grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
-            <h2 className="max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
-              Expert construction &amp; solutions for every project.
+            <h2 className="font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink sm:whitespace-nowrap">
+              Expert construction &amp; solutions.
             </h2>
-            <p className="max-w-sm text-base text-ink-soft">
-              From residential design build to commercial work, one accountable
-              team guides you from first sketch to final walkthrough.
-            </p>
           </div>
         </Reveal>
 

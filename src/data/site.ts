@@ -1,9 +1,6 @@
 export const site = {
   company: 'McNelly Construction',
   legalName: 'McNelly Construction, Inc.',
-  tagline: 'Let us make your dream a reality.',
-  description:
-    'At McNelly Construction, we take pride in delivering superior construction services. With our skilled team and commitment to excellence, we are dedicated to bringing your construction projects to life. Located in northeast Genesee County, we serve our local community and the surrounding areas.',
   phone: '(810) 444-7167',
   email: 'McNellyConstructionInc@gmail.com',
   address: {
@@ -18,18 +15,17 @@ export const site = {
   },
 } as const
 
-export const mailtoConsult = `mailto:${site.email}?subject=${encodeURIComponent(
-  'Consultation request',
-)}&body=${encodeURIComponent(
-  "Hi McNelly Construction,\n\nI'd like to book a consultation. Here are a few details about my project:\n\n- Project type:\n- Location:\n- Timeline:\n- Notes:\n\nThanks,\n",
-)}`
+// Every "Book a Consultation" button scrolls to the Contact section.
+export const contactHref = '#contact'
 
-// Scroll-spy nav links. "Book a Consultation" is rendered separately as a
-// mailto button (see Navbar / Footer), matching the four-item brief nav.
+// Scroll-spy nav links, in page order. "Book a Consultation" is rendered
+// separately as a button that also jumps to #contact (see Navbar / Footer).
 export const nav = [
   { label: 'Home', href: '#top' },
   { label: 'About', href: '#about' },
   { label: 'Gallery', href: '#gallery' },
+  { label: 'Testimonials', href: '#testimonials' },
+  { label: 'Contact', href: '#contact' },
 ] as const
 
 // Hero copy — pulled straight from the company brief.
@@ -37,40 +33,31 @@ export const hero = {
   eyebrow: 'Family-owned general contractor',
   headline: ['Let Us Make Your', 'Dream a Reality'],
   sub: 'We take pride in delivering superior construction services. With a skilled team and a commitment to excellence, we bring your construction projects to life.',
-  primaryCta: { label: 'Book a Consultation', href: mailtoConsult },
+  primaryCta: { label: 'Book a Consultation', href: contactHref },
   secondaryCta: { label: 'See our work', href: '#gallery' },
-  note: 'Located in northeast Genesee County, serving our local community and the surrounding areas. Book a consultation with us today.',
 } as const
 
-// Full-bleed hero background — finished-home photography, crossfaded slowly.
-// Mix of the original site photos and the owner's newer batch.
+// Hero cut-outs — transparent PNGs of finished + in-progress homes. They sit
+// on a calm backdrop and scale up as the pinned hero is scrolled past, while
+// the headline scrolls up the page at natural speed (Glide-style).
 export const heroImages = [
-  '/photos/home-hilltop.jpg',
-  '/photos/gallery-craftsman-winter.jpg',
-  '/photos/home-green-craftsman.jpg',
-  '/photos/barndominium.jpg',
-  '/photos/home-stone-chimney.jpg',
-  '/photos/home-green-ranch.jpg',
-] as const
-
-// Foot-of-hero band — what we do, no invented metrics.
-export const heroStats = [
-  { value: 'Residential', suffix: '', label: 'Custom homes & design build' },
-  { value: 'Commercial', suffix: '', label: 'Offices, churches, clinics & more' },
-  { value: 'Local', suffix: '', label: 'Rooted in northeast Genesee County' },
+  '/photos/hero-navy-farmhouse.png',
+  '/photos/hero-green-ranch.png',
+  '/photos/hero-black-barn.png',
+  '/photos/hero-framing.png',
 ] as const
 
 export const services = [
   {
     index: '01',
     title: 'General Construction',
-    body: 'Planning a new building, addition, or renovation? We help you navigate design and construction options to protect your investment, ensure quality, and streamline the process.',
+    body: 'Planning a new building, addition, or renovation? Let us help you navigate design and construction options to protect your investment, ensure quality, and streamline the process.',
     image: '/photos/service-general-construction.jpg',
   },
   {
     index: '02',
     title: 'Commercial',
-    body: 'Specialized construction services for commercial and larger projects — office spaces, churches, clinics, and more — delivering efficient, high-quality results while keeping a residential-friendly approach.',
+    body: 'We offer specialized construction services for commercial or larger projects such as office spaces, churches, clinics, and more, delivering efficient and high-quality results while maintaining a residential-friendly approach.',
     image: '/photos/service-commercial.jpg',
   },
   {
@@ -81,78 +68,22 @@ export const services = [
   },
 ] as const
 
-// Gallery — real jobsite photos from the company. Names/locations/years are
-// illustrative and can be replaced with the true project details from the owner.
-export const projects = [
+// Gallery — a single build shown in sequence: foundation, framing, finished home.
+export const buildSteps = [
   {
-    name: 'Poured Foundation',
-    location: 'Genesee County, MI',
-    year: '2024',
-    category: 'In Progress',
+    step: 'Foundation',
     image: '/photos/gallery-foundation.jpg',
+    alt: 'Poured concrete foundation walls on a new McNelly build site',
   },
   {
-    name: 'Ranch Under Frame',
-    location: 'Otisville, MI',
-    year: '2024',
-    category: 'In Progress',
+    step: 'Framing',
     image: '/photos/gallery-framing-truck.jpg',
+    alt: 'Ranch home under frame with the McNelly work truck on site',
   },
   {
-    name: 'Craftsman Ranch',
-    location: 'Genesee County, MI',
-    year: '2023',
-    category: 'New Build',
+    step: 'Finished home',
     image: '/photos/gallery-craftsman-winter.jpg',
-  },
-  {
-    name: 'Custom Barndominium',
-    location: 'Genesee County, MI',
-    year: '2023',
-    category: 'Design Build',
-    image: '/photos/barndominium.jpg',
-  },
-  {
-    name: 'Commercial Build',
-    location: 'Genesee County, MI',
-    year: '2022',
-    category: 'Commercial',
-    image: '/photos/service-commercial.jpg',
-  },
-  {
-    name: 'Two-Story Family Home',
-    location: 'Grand Blanc, MI',
-    year: '2022',
-    category: 'New Build',
-    image: '/photos/home-stone-chimney.jpg',
-  },
-  {
-    name: 'Craftsman Front Porch',
-    location: 'Davison, MI',
-    year: '2022',
-    category: 'New Build',
-    image: '/photos/home-green-craftsman.jpg',
-  },
-  {
-    name: 'Hilltop Walkout',
-    location: 'Fenton, MI',
-    year: '2021',
-    category: 'New Build',
-    image: '/photos/home-hilltop.jpg',
-  },
-  {
-    name: 'Wooded Drive Barndominium',
-    location: 'Genesee County, MI',
-    year: '2021',
-    category: 'Design Build',
-    image: '/photos/barn-drive.jpg',
-  },
-  {
-    name: 'Covered Porch Renovation',
-    location: 'Holly, MI',
-    year: '2021',
-    category: 'Renovation',
-    image: '/photos/home-grey-twostory.jpg',
+    alt: 'Completed craftsman ranch home with attached garage in winter',
   },
 ] as const
 
@@ -180,7 +111,6 @@ export const testimonials = [
     name: 'Cindy Childs',
     title: 'Co-owner of Childs Veterinary Clinic — Davison, MI',
     image: '/photos/testimonial-childs-vet.jpg',
-    featured: true,
   },
   {
     quote:
@@ -188,7 +118,6 @@ export const testimonials = [
     name: 'Jeffrey Ferweda',
     title: 'Sedgwick & Ferweda Architects',
     image: '/photos/testimonial-church-interior.jpg',
-    featured: false,
   },
   {
     quote:
@@ -196,7 +125,6 @@ export const testimonials = [
     name: 'Jeff Berlin',
     title: '',
     image: '/photos/barndominium.jpg',
-    featured: false,
   },
 ] as const
 

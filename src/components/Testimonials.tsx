@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import { useReducedMotion } from 'motion/react'
 import { testimonials } from '../data/site'
 import { Reveal } from './Reveal'
 
@@ -5,8 +7,8 @@ const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
 
 const Quote = () => (
   <svg
-    width="34"
-    height="34"
+    width="30"
+    height="30"
     viewBox="0 0 24 24"
     fill="currentColor"
     className="text-clay-soft"
@@ -16,8 +18,111 @@ const Quote = () => (
   </svg>
 )
 
+type Testimonial = (typeof testimonials)[number]
+
+function Card({ t }: { t: Testimonial }) {
+  return (
+    <figure className="flex h-full w-[340px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm sm:w-[460px]">
+      <picture>
+        <source srcSet={webp(t.image)} type="image/webp" />
+        <img
+          src={t.image}
+          alt={t.title || `Project completed for ${t.name}`}
+          loading="lazy"
+          className="h-[160px] w-full shrink-0 object-cover"
+          draggable={false}
+        />
+      </picture>
+      <div className="flex flex-1 flex-col p-7">
+        <Quote />
+        <blockquote className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">
+          “{t.quote}”
+        </blockquote>
+        <figcaption className="mt-auto border-t border-line pt-4">
+          <span className="block font-semibold text-ink">{t.name}</span>
+          {t.title && (
+            <span className="mt-0.5 block text-sm text-ink-soft">{t.title}</span>
+          )}
+        </figcaption>
+      </div>
+    </figure>
+  )
+}
+
 export function Testimonials() {
-  const [featured, ...rest] = testimonials
+  const reduced = useReducedMotion()
+  const viewportRef = useRef<HTMLDivElement>(null)
+  // While > now, the auto-advance is paused (user is interacting).
+  const pausedUntil = useRef(0)
+
+  // Three identical copies so the scroll position can wrap seamlessly in
+  // either direction (native scroll can't go past 0, so we sit in the middle).
+  const loop = [...testimonials, ...testimonials, ...testimonials]
+
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+
+    const unit = () => el.scrollWidth / 3
+
+    // Snap back toward the middle copy whenever we drift a full copy-width
+    // away from it — the copies are identical so the jump is invisible.
+    const wrap = () => {
+      const u = unit()
+      if (u === 0) return
+      if (el.scrollLeft > u * 1.5) el.scrollLeft -= u
+      else if (el.scrollLeft < u * 0.5) el.scrollLeft += u
+    }
+
+    // Start reading position at the top of the middle copy.
+    el.scrollLeft = unit()
+
+    // Any finger / trackpad / wheel input hands control to the reader for a
+    // beat before the drift resumes; hovering holds it until the pointer leaves.
+    const hold = (ms: number) => {
+      pausedUntil.current = Math.max(pausedUntil.current, performance.now() + ms)
+    }
+    const onWheel = () => hold(2000)
+    const onTouch = () => hold(2000)
+    const onPointerDown = () => hold(2000)
+    const onScroll = () => wrap()
+    const onEnter = () => {
+      pausedUntil.current = Infinity
+    }
+    const onLeave = () => {
+      pausedUntil.current = performance.now() + 1200
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: true })
+    el.addEventListener('touchstart', onTouch, { passive: true })
+    el.addEventListener('touchmove', onTouch, { passive: true })
+    el.addEventListener('pointerdown', onPointerDown, { passive: true })
+    el.addEventListener('scroll', onScroll, { passive: true })
+    el.addEventListener('mouseenter', onEnter)
+    el.addEventListener('mouseleave', onLeave)
+
+    let raf = 0
+    const SPEED = 0.4 // px per frame ≈ 24px/s
+    const tick = () => {
+      if (!reduced && performance.now() >= pausedUntil.current) {
+        el.scrollLeft += SPEED
+        wrap()
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('touchstart', onTouch)
+      el.removeEventListener('touchmove', onTouch)
+      el.removeEventListener('pointerdown', onPointerDown)
+      el.removeEventListener('scroll', onScroll)
+      el.removeEventListener('mouseenter', onEnter)
+      el.removeEventListener('mouseleave', onLeave)
+    }
+  }, [reduced])
 
   return (
     <section id="testimonials" className="scroll-mt-24">
@@ -30,60 +135,29 @@ export function Testimonials() {
         </Reveal>
 
         <Reveal delay={80}>
-          <figure className="mt-12 grid overflow-hidden rounded-[1.75rem] border border-line bg-white/65 backdrop-blur-sm md:grid-cols-2">
-            <div className="relative min-h-[260px]">
-              <picture>
-                <source srcSet={webp(featured.image)} type="image/webp" />
-                <img
-                  src={featured.image}
-                  alt={featured.title}
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </picture>
-            </div>
-            <div className="flex flex-col p-8 sm:p-12">
-              <Quote />
-              <blockquote className="mt-5 font-display text-lg font-medium leading-relaxed text-ink sm:text-xl">
-                “{featured.quote}”
-              </blockquote>
-              <figcaption className="mt-7 border-t border-line pt-5">
-                <span className="block font-semibold text-ink">{featured.name}</span>
-                <span className="mt-0.5 block text-sm text-ink-soft">{featured.title}</span>
-              </figcaption>
-            </div>
-          </figure>
+          <div
+            ref={viewportRef}
+            className="no-scrollbar relative mt-12 cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing"
+            style={{
+              maskImage:
+                'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
+              WebkitMaskImage:
+                'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
+            }}
+          >
+            <ul className="flex w-max items-stretch">
+              {loop.map((t, i) => (
+                <li
+                  key={`${t.name}-${i}`}
+                  aria-hidden={i >= testimonials.length}
+                  className="flex pr-6"
+                >
+                  <Card t={t} />
+                </li>
+              ))}
+            </ul>
+          </div>
         </Reveal>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {rest.map((t, i) => (
-            <Reveal key={t.name} delay={120 + i * 90}>
-              <figure className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white/60 backdrop-blur-sm">
-                <picture>
-                  <source srcSet={webp(t.image)} type="image/webp" />
-                  <img
-                    src={t.image}
-                    alt={t.title || `Project completed for ${t.name}`}
-                    loading="lazy"
-                    className="aspect-[16/10] w-full object-cover"
-                  />
-                </picture>
-                <div className="flex flex-1 flex-col p-8">
-                  <Quote />
-                  <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed text-ink-soft">
-                    “{t.quote}”
-                  </blockquote>
-                  <figcaption className="mt-6 border-t border-line pt-4">
-                    <span className="block font-semibold text-ink">{t.name}</span>
-                    {t.title && (
-                      <span className="mt-0.5 block text-sm text-ink-soft">{t.title}</span>
-                    )}
-                  </figcaption>
-                </div>
-              </figure>
-            </Reveal>
-          ))}
-        </div>
       </div>
     </section>
   )

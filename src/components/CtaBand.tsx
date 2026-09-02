@@ -1,6 +1,6 @@
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import { useRef } from 'react'
-import { cta, mailtoConsult } from '../data/site'
+import { contactHref, cta } from '../data/site'
 import { Reveal } from './Reveal'
 
 const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
@@ -41,7 +41,7 @@ export function CtaBand() {
                 {cta.heading}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-white/75">{cta.sub}</p>
-              <a href={mailtoConsult} className="btn-pine mt-8 !bg-white !text-pine-deep hover:!bg-clay-soft">
+              <a href={contactHref} className="btn-pine mt-8 !bg-white !text-pine-deep hover:!bg-clay-soft">
                 Book a Consultation
               </a>
             </Reveal>

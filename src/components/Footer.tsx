@@ -1,4 +1,4 @@
-import { mailtoConsult, nav, site } from '../data/site'
+import { contactHref, nav, site } from '../data/site'
 
 export function Footer() {
   return (
@@ -62,7 +62,7 @@ export function Footer() {
                 </a>
               ))}
               <a
-                href={mailtoConsult}
+                href={contactHref}
                 className="text-xs font-medium text-white/70 transition-colors hover:text-clay-soft"
               >
                 Book a Consultation

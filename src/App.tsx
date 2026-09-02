@@ -18,8 +18,8 @@ function App() {
             docks against the navbar. */}
         <div className="relative z-10 -mt-8 rounded-t-[2.5rem] bg-sand shadow-[0_-24px_60px_-30px_rgba(31,52,43,0.35)]">
           <Services />
-          <Gallery />
           <About />
+          <Gallery />
           <CtaBand />
           <Testimonials />
           <Contact />

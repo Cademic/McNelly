@@ -1,16 +1,23 @@
-import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { mailtoConsult, nav, site } from '../data/site'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion, useReducedMotion, useScroll } from 'motion/react'
+import { contactHref, nav, site } from '../data/site'
 import { useActiveSection } from '../hooks/useActiveSection'
 
 const SECTION_IDS = nav.map((n) => n.href.slice(1))
 const EASE = [0.16, 1, 0.3, 1] as const
+
+type PillRect = { left: number; width: number }
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const reduced = useReducedMotion()
   const active = useActiveSection(SECTION_IDS)
+  const { scrollYProgress } = useScroll()
+
+  const navRef = useRef<HTMLElement>(null)
+  const [pill, setPill] = useState<PillRect | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -19,15 +26,40 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Lock body scroll while the full-screen mobile menu is open.
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  // Slide the highlight pill to sit behind the active section's link.
+  useEffect(() => {
+    const measure = () => {
+      const el = navRef.current?.querySelector<HTMLElement>(
+        `[data-section="${active}"]`,
+      )
+      if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth })
+    }
+    measure()
+    document.fonts?.ready.then(measure)
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [active])
+
   return (
+    <>
     <motion.header
       initial={reduced ? false : { y: -48, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: EASE }}
-      className={`sticky top-0 z-50 transition-colors duration-500 ${
+      className={`sticky top-0 z-50 backdrop-blur-xl backdrop-saturate-150 transition-colors duration-500 ${
         scrolled
-          ? 'border-b border-line bg-mist-2/70 backdrop-blur-xl backdrop-saturate-150'
-          : 'border-b border-transparent bg-transparent'
+          ? 'border-b border-line bg-sand/80'
+          : 'border-b border-transparent bg-sand/70'
       }`}
     >
       <div className="mx-auto flex h-nav max-w-[1360px] items-center justify-between px-5 lg:px-12">
@@ -40,24 +72,36 @@ export function Navbar() {
           </span>
         </a>
 
-        <nav className="hidden items-center gap-1 rounded-full border border-white/50 bg-white/45 px-2 py-1 backdrop-blur-md md:flex">
+        <nav
+          ref={navRef}
+          className="relative hidden items-center gap-1 rounded-full border border-white/50 bg-white/45 px-2 py-1 backdrop-blur-md md:flex"
+        >
+          {pill && (
+            <motion.span
+              aria-hidden
+              className="absolute inset-y-1 -z-10 rounded-full bg-white/80 shadow-sm"
+              initial={false}
+              animate={{ left: pill.left, width: pill.width }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { type: 'spring', stiffness: 420, damping: 34 }
+              }
+            />
+          )}
           {nav.map((item) => {
-            const isActive = active === item.href.slice(1)
+            const id = item.href.slice(1)
+            const isActive = active === id
             return (
               <a
                 key={item.href}
                 href={item.href}
+                data-section={id}
+                aria-current={isActive ? 'true' : undefined}
                 className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                   isActive ? 'text-ink' : 'text-ink-soft hover:text-ink'
                 }`}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="nav-pill"
-                    className="absolute inset-0 -z-10 rounded-full bg-white/80 shadow-sm"
-                    transition={{ duration: 0.4, ease: EASE }}
-                  />
-                )}
                 {item.label}
               </a>
             )
@@ -71,7 +115,7 @@ export function Navbar() {
           >
             {site.phone}
           </a>
-          <a href={mailtoConsult} className="btn-pine !px-5 !py-2.5 !text-sm">
+          <a href={contactHref} className="btn-pine !px-5 !py-2.5 !text-sm">
             Book a Consultation
           </a>
         </div>
@@ -89,39 +133,52 @@ export function Navbar() {
         </button>
       </div>
 
+      <motion.div
+        aria-hidden
+        style={{ scaleX: scrollYProgress }}
+        className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-pine"
+      />
+
+    </motion.header>
+
+    {createPortal(
       <AnimatePresence>
         {open && (
           <motion.nav
             key="mobile-menu"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.32, ease: EASE }}
-            className="overflow-hidden border-t border-line bg-mist-2/90 backdrop-blur-xl md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: EASE }}
+            className="fixed inset-0 z-40 flex flex-col pt-nav backdrop-blur-xl backdrop-saturate-150 bg-sand/90 md:hidden"
           >
-            {nav.map((item, i) => (
-              <motion.a
-                key={item.href}
-                href={item.href}
+            <div className="flex flex-col overflow-y-auto px-5 py-6">
+              {nav.map((item, i) => (
+                <motion.a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  initial={reduced ? false : { opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 + i * 0.05, duration: 0.3 }}
+                  className="block border-b border-line py-5 text-lg font-medium text-ink"
+                >
+                  {item.label}
+                </motion.a>
+              ))}
+              <a
+                href={contactHref}
                 onClick={() => setOpen(false)}
-                initial={reduced ? false : { opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 + i * 0.05, duration: 0.3 }}
-                className="block border-b border-line px-5 py-4 text-sm font-medium text-ink"
+                className="mt-6 block text-center text-base font-semibold text-pine"
               >
-                {item.label}
-              </motion.a>
-            ))}
-            <a
-              href={mailtoConsult}
-              onClick={() => setOpen(false)}
-              className="block px-5 py-4 text-center text-sm font-semibold text-pine"
-            >
-              Book a Consultation →
-            </a>
+                Book a Consultation →
+              </a>
+            </div>
           </motion.nav>
         )}
-      </AnimatePresence>
-    </motion.header>
+      </AnimatePresence>,
+      document.body,
+    )}
+  </>
   )
 }
