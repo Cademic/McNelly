@@ -1,0 +1,155 @@
+@import 'tailwindcss';
+
+/*
+ * "Still Water" — McNelly Construction design system.
+ * Calm architectural minimalism: a misty blue-to-sand gradient ground,
+ * deep-pine ink, soft rounded geometry, frosted glass panels, and
+ * house photography washed back so it reads quiet rather than loud.
+ */
+@theme {
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+
+  /* Atmospheric ground */
+  --color-mist: #c4d6dd;
+  --color-mist-2: #d7e2e0;
+  --color-sand: #eef0e9;
+  --color-surface: #f7f8f3;
+  --color-surface-2: #ffffff;
+  --color-blueprint: #eef2f1;
+
+  /* Ink — deep pine */
+  --color-ink: #294238;
+  --color-ink-soft: #4f5f56;
+  --color-ink-mute: #8a968e;
+
+  /* Primary — pine */
+  --color-pine: #2f4a3f;
+  --color-pine-2: #37564a;
+  --color-pine-deep: #1f342b;
+  --color-pine-soft: #9fb5a9;
+
+  /* Warm accent — used sparingly, the parasol red */
+  --color-clay: #bd5f3d;
+  --color-clay-soft: #d8a98f;
+
+  /* Lines */
+  --color-line: rgba(41, 66, 56, 0.14);
+  --color-line-strong: rgba(41, 66, 56, 0.28);
+  --color-error: #ba1a1a;
+
+  /* Soft rounded geometry everywhere */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
+  --radius-3xl: 3rem;
+
+  --spacing-section: 120px;
+  /* Sticky navbar height — the pinned hero sits directly below this and the
+     rounded page body docks against it as it scrolls up. */
+  --spacing-nav: 4.5rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: linear-gradient(180deg, var(--color-mist) 0%, var(--color-mist-2) 30%, var(--color-sand) 70%);
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    color: var(--color-ink);
+  }
+
+  ::selection {
+    background: var(--color-clay);
+    color: #fff;
+  }
+
+  /* Anchor jumps clear the sticky navbar. */
+  :where(section[id]) {
+    scroll-margin-top: var(--spacing-nav);
+  }
+}
+
+@layer components {
+  /* Eyebrow / small tracked label */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* Frosted glass panel */
+  .glass {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  /* Pill button — primary */
+  .btn-pine {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    border-radius: 999px;
+    background: var(--color-pine);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.9rem 1.6rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  .btn-pine:hover {
+    background: var(--color-pine-2);
+    transform: translateY(-2px);
+  }
+
+  /* Soft dotted list marker */
+  .marker-dot {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .marker-dot::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--color-clay);
+  }
+}
+
+/* Scroll reveals are handled by Motion in src/components/Reveal.tsx. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
