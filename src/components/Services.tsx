@@ -19,7 +19,7 @@ export function Services() {
         <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
             <Reveal key={s.title} delay={(i % 3) * 90}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-line bg-white/60 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:bg-white/85 hover:shadow-[0_30px_60px_-30px_rgba(31,52,43,0.35)]">
+              <article className="group flex h-full flex-col overflow-hidden border border-line bg-white/60 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:bg-white/85 hover:shadow-[0_30px_60px_-30px_rgba(31,52,43,0.35)]">
                 <picture>
                   <source srcSet={webp(s.image)} type="image/webp" />
                   <img

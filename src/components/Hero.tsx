@@ -98,12 +98,12 @@ export function Hero() {
           <motion.div
             key={index}
             className="absolute inset-x-0 bottom-0 flex justify-center"
-            initial={{ opacity: 0, scale: reduced ? 1 : 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: reduced ? 0 : '12%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: reduced ? 0 : '-6%' }}
             transition={{
               opacity: { duration: CROSSFADE_S, ease: 'easeInOut' },
-              scale: { duration: AUTOPLAY_MS / 1000 + 2, ease: 'linear' },
+              y: { duration: 1, ease: EASE },
             }}
           >
             <picture>
@@ -123,7 +123,7 @@ export function Hero() {
       {/* Headline column — flex child so it never overlaps the foot band */}
       <motion.div
         style={textStyle}
-        className="relative mx-auto mt-0 flex w-full max-w-[1360px] min-h-0 flex-1 flex-col items-center justify-start gap-6 px-5 pb-12 pt-[13vh] text-center sm:pt-0 lg:-mt-6 lg:px-12 lg:pb-16 lg:pt-0"
+        className="relative mx-auto mt-0 flex w-full max-w-[1360px] min-h-0 flex-1 flex-col items-center justify-start gap-6 px-5 pb-12 pt-[4vh] text-center sm:pt-0 lg:-mt-6 lg:px-12 lg:pb-16 lg:pt-0"
       >
         <motion.div
           variants={container}
@@ -151,7 +151,7 @@ export function Hero() {
             </a>
             <a
               href={hero.secondaryCta.href}
-              className="group inline-flex items-center gap-2 border-b border-ink/30 pb-1 text-sm font-semibold text-ink transition-colors hover:border-clay hover:text-clay"
+              className="group inline-flex items-center gap-2 bg-gradient-to-b from-white/80 to-white/55 px-5 py-2.5 text-sm font-semibold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_24px_rgba(30,41,37,0.14)] backdrop-blur-md transition-colors hover:text-clay"
             >
               {hero.secondaryCta.label}
               <span className="transition-transform duration-300 group-hover:translate-x-1">
