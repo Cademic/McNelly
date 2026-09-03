@@ -22,20 +22,20 @@ type Testimonial = (typeof testimonials)[number]
 
 function Card({ t }: { t: Testimonial }) {
   return (
-    <figure className="flex h-full w-[340px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm sm:w-[460px]">
+    <figure className="flex h-full w-[270px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm sm:w-[380px]">
       <picture>
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
           src={t.image}
           alt={t.title || `Project completed for ${t.name}`}
           loading="lazy"
-          className="h-[160px] w-full shrink-0 object-cover"
+          className="h-[120px] w-full shrink-0 object-cover sm:h-[140px]"
           draggable={false}
         />
       </picture>
-      <div className="flex flex-1 flex-col p-7">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
         <Quote />
-        <blockquote className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">
+        <blockquote className="mt-3 text-[13px] leading-relaxed text-ink-soft sm:text-[13.5px]">
           “{t.quote}”
         </blockquote>
         <figcaption className="mt-auto border-t border-line pt-4">
@@ -137,7 +137,7 @@ export function Testimonials() {
         <Reveal delay={80}>
           <div
             ref={viewportRef}
-            className="no-scrollbar relative mt-12 cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing"
+            className="no-scrollbar relative mt-8 cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing sm:mt-12"
             style={{
               maskImage:
                 'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
@@ -150,7 +150,7 @@ export function Testimonials() {
                 <li
                   key={`${t.name}-${i}`}
                   aria-hidden={i >= testimonials.length}
-                  className="flex pr-6"
+                  className="flex pr-4 sm:pr-6"
                 >
                   <Card t={t} />
                 </li>

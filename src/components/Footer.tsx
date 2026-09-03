@@ -9,7 +9,7 @@ export function Footer() {
             <img
               src="/logo-full-light.png"
               alt={`${site.company} logo`}
-              className="h-8 w-auto"
+              className="h-8 w-auto shrink-0 self-start"
             />
             <p className="text-xs text-white/60">
               <a

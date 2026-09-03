@@ -15,8 +15,8 @@ export function About() {
   return (
     <section id="about" className="scroll-mt-24 pb-8">
       <div className="overflow-hidden bg-pine text-white">
-        <div className="mx-auto grid max-w-[1360px] gap-16 px-5 py-20 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12 lg:py-24">
-          <Reveal>
+        <div className="mx-auto grid max-w-[1360px] gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
+          <Reveal className="px-5 py-20 sm:px-8 lg:py-24 lg:pl-12 lg:pr-0">
             <p className="eyebrow text-clay-soft">The firm</p>
             <h2 className="mt-5 font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-white sm:whitespace-nowrap">
               Our commitment to excellence.
@@ -56,19 +56,25 @@ export function About() {
             </dl>
           </Reveal>
 
-          <Reveal delay={120}>
+          <Reveal
+            className="lg:h-full lg:mr-[calc(50%_-_50vw)]"
+            delay={120}
+          >
             <div
               ref={imgWrapRef}
-              className="overflow-hidden border border-white/10"
+              className="h-full overflow-hidden lg:border-l lg:border-white/10"
             >
-              <motion.div style={reduced ? undefined : { y: imgY }}>
-                <picture>
+              <motion.div
+                className="h-full"
+                style={reduced ? undefined : { y: imgY }}
+              >
+                <picture className="block h-full">
                   <source srcSet="/photos/detail-stone.webp" type="image/webp" />
                   <img
                     src="/photos/detail-stone.jpg"
                     alt="Stacked-stone corner detail with black windows on a McNelly custom home"
                     loading="lazy"
-                    className="aspect-[4/3] w-full scale-110 object-cover"
+                    className="aspect-[4/3] h-full w-full scale-110 object-cover lg:aspect-auto"
                   />
                 </picture>
               </motion.div>
