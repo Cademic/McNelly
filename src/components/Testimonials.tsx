@@ -29,8 +29,8 @@ const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
 
 const Quote = () => (
   <svg
-    width="30"
-    height="30"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="currentColor"
     className="text-clay-soft"
@@ -44,23 +44,25 @@ type Testimonial = (typeof testimonials)[number]
 
 function Card({ t }: { t: Testimonial }) {
   return (
-    <figure className="flex h-full w-[270px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm sm:w-[380px]">
+    <figure className="flex h-full w-auto min-w-[180px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm">
       <picture>
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
           src={t.image}
           alt={t.title || `Project completed for ${t.name}`}
           loading="lazy"
-          className="h-[120px] w-full shrink-0 object-cover sm:h-[140px]"
+          className="h-[84px] w-full shrink-0 object-cover sm:h-[110px]"
           draggable={false}
         />
       </picture>
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         <Quote />
-        <blockquote className="mt-3 text-[13px] leading-relaxed text-ink-soft sm:text-[13.5px]">
+        {/* Width follows the text: short quotes make a narrow card, long ones
+            wrap only once they hit the max measure. */}
+        <blockquote className="mt-2 w-max max-w-[240px] text-[12.5px] leading-relaxed text-ink-soft sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px]">
           “{t.quote}”
         </blockquote>
-        <figcaption className="mt-auto border-t border-line pt-4">
+        <figcaption className="mt-auto max-w-[240px] border-t border-line pt-3 sm:max-w-[340px] sm:pt-4">
           <span className="block font-semibold text-ink">{t.name}</span>
           {t.title && (
             <span className="mt-0.5 block text-sm text-ink-soft">{t.title}</span>
@@ -76,20 +78,22 @@ export function Testimonials() {
   const viewportRef = useRef<HTMLDivElement>(null)
   // While > now, the auto-advance is paused (user is interacting).
   const pausedUntil = useRef(0)
+  // Pixels the arrow controls still owe the track; the rAF loop eases this to 0.
+  const nudge = useRef(0)
 
   // Three identical copies so the scroll position can wrap seamlessly in
   // either direction (native scroll can't go past 0, so we sit in the middle).
   const loop = [...testimonials, ...testimonials, ...testimonials]
 
-  // Arrow controls: nudge the track by one card and hold the auto-drift so it
-  // doesn't fight the reader for a beat.
+  // Arrow controls: queue a one-card jump and hold the auto-drift for a beat so
+  // it doesn't fight the reader.
   const step = (dir: 1 | -1) => {
     const el = viewportRef.current
     if (!el) return
     const card = el.querySelector('li')?.getBoundingClientRect().width
     const by = card && card > 0 ? card : el.clientWidth * 0.8
+    nudge.current += dir * by
     pausedUntil.current = performance.now() + 2500
-    el.scrollBy({ left: dir * by, behavior: reduced ? 'auto' : 'smooth' })
   }
 
   useEffect(() => {
@@ -98,37 +102,41 @@ export function Testimonials() {
 
     const unit = () => el.scrollWidth / 3
 
-    // Snap back toward the middle copy whenever we drift a full copy-width
-    // away from it — the copies are identical so the jump is invisible.
-    const wrap = () => {
-      const u = unit()
-      if (u === 0) return
-      if (el.scrollLeft > u * 1.5) el.scrollLeft -= u
-      else if (el.scrollLeft < u * 0.5) el.scrollLeft += u
-    }
-
-    // Start reading position at the top of the middle copy.
-    el.scrollLeft = unit()
+    // Own accumulator: mobile browsers round el.scrollLeft to an integer, so
+    // `scrollLeft += 0.4` never budges. Track the true position in JS and write
+    // the whole value every frame instead.
+    let pos = unit()
+    el.scrollLeft = pos
 
     // Hovering holds the drift until the pointer leaves.
-    const onScroll = () => wrap()
     const onEnter = () => {
       pausedUntil.current = Infinity
     }
     const onLeave = () => {
       pausedUntil.current = 0
     }
-
-    el.addEventListener('scroll', onScroll, { passive: true })
     el.addEventListener('mouseenter', onEnter)
     el.addEventListener('mouseleave', onLeave)
 
     let raf = 0
     const SPEED = 0.4 // px per frame ≈ 24px/s
     const tick = () => {
-      if (!reduced && performance.now() >= pausedUntil.current) {
-        el.scrollLeft += SPEED
-        wrap()
+      const u = unit()
+      if (u > 0) {
+        if (!reduced && performance.now() >= pausedUntil.current) pos += SPEED
+        if (nudge.current !== 0) {
+          const eat =
+            reduced || Math.abs(nudge.current) < 1
+              ? nudge.current
+              : nudge.current * 0.18
+          pos += eat
+          nudge.current -= eat
+        }
+        // Stay parked on the middle copy so it can drift either way forever —
+        // the copies are identical so the wrap is invisible.
+        if (pos >= u * 2) pos -= u
+        else if (pos < u) pos += u
+        el.scrollLeft = pos
       }
       raf = requestAnimationFrame(tick)
     }
@@ -136,7 +144,6 @@ export function Testimonials() {
 
     return () => {
       cancelAnimationFrame(raf)
-      el.removeEventListener('scroll', onScroll)
       el.removeEventListener('mouseenter', onEnter)
       el.removeEventListener('mouseleave', onLeave)
     }
@@ -190,7 +197,7 @@ export function Testimonials() {
                 <li
                   key={`${t.name}-${i}`}
                   aria-hidden={i >= testimonials.length}
-                  className="flex pr-4 sm:pr-6"
+                  className="flex pr-3 sm:pr-6"
                 >
                   <Card t={t} />
                 </li>
