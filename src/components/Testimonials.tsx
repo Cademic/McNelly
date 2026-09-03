@@ -5,6 +5,28 @@ import { Reveal } from './Reveal'
 
 const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
 
+const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    className={
+      'transition-transform duration-300 ease-out ' +
+      (dir === 'left'
+        ? 'group-hover:-translate-x-0.5'
+        : 'group-hover:translate-x-0.5')
+    }
+  >
+    <path d={dir === 'left' ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
+  </svg>
+)
+
 const Quote = () => (
   <svg
     width="30"
@@ -59,6 +81,17 @@ export function Testimonials() {
   // either direction (native scroll can't go past 0, so we sit in the middle).
   const loop = [...testimonials, ...testimonials, ...testimonials]
 
+  // Arrow controls: nudge the track by one card and hold the auto-drift so it
+  // doesn't fight the reader for a beat.
+  const step = (dir: 1 | -1) => {
+    const el = viewportRef.current
+    if (!el) return
+    const card = el.querySelector('li')?.getBoundingClientRect().width
+    const by = card && card > 0 ? card : el.clientWidth * 0.8
+    pausedUntil.current = performance.now() + 2500
+    el.scrollBy({ left: dir * by, behavior: reduced ? 'auto' : 'smooth' })
+  }
+
   useEffect(() => {
     const el = viewportRef.current
     if (!el) return
@@ -77,26 +110,15 @@ export function Testimonials() {
     // Start reading position at the top of the middle copy.
     el.scrollLeft = unit()
 
-    // Any finger / trackpad / wheel input hands control to the reader for a
-    // beat before the drift resumes; hovering holds it until the pointer leaves.
-    const hold = (ms: number) => {
-      pausedUntil.current = Math.max(pausedUntil.current, performance.now() + ms)
-    }
-    const onWheel = () => hold(2000)
-    const onTouch = () => hold(2000)
-    const onPointerDown = () => hold(2000)
+    // Hovering holds the drift until the pointer leaves.
     const onScroll = () => wrap()
     const onEnter = () => {
       pausedUntil.current = Infinity
     }
     const onLeave = () => {
-      pausedUntil.current = performance.now() + 1200
+      pausedUntil.current = 0
     }
 
-    el.addEventListener('wheel', onWheel, { passive: true })
-    el.addEventListener('touchstart', onTouch, { passive: true })
-    el.addEventListener('touchmove', onTouch, { passive: true })
-    el.addEventListener('pointerdown', onPointerDown, { passive: true })
     el.addEventListener('scroll', onScroll, { passive: true })
     el.addEventListener('mouseenter', onEnter)
     el.addEventListener('mouseleave', onLeave)
@@ -114,10 +136,6 @@ export function Testimonials() {
 
     return () => {
       cancelAnimationFrame(raf)
-      el.removeEventListener('wheel', onWheel)
-      el.removeEventListener('touchstart', onTouch)
-      el.removeEventListener('touchmove', onTouch)
-      el.removeEventListener('pointerdown', onPointerDown)
       el.removeEventListener('scroll', onScroll)
       el.removeEventListener('mouseenter', onEnter)
       el.removeEventListener('mouseleave', onLeave)
@@ -128,16 +146,38 @@ export function Testimonials() {
     <section id="testimonials" className="scroll-mt-24">
       <div className="mx-auto max-w-[1360px] px-5 py-24 lg:px-12 lg:py-[120px]">
         <Reveal>
-          <p className="eyebrow text-clay">Testimonials</p>
-          <h2 className="mt-5 max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
-            What our clients say.
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="eyebrow text-clay">Testimonials</p>
+              <h2 className="mt-5 max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
+                What our clients say.
+              </h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label="Previous testimonials"
+                className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
+              >
+                <Chevron dir="left" />
+              </button>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label="Next testimonials"
+                className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
+              >
+                <Chevron dir="right" />
+              </button>
+            </div>
+          </div>
         </Reveal>
 
         <Reveal delay={80}>
           <div
             ref={viewportRef}
-            className="no-scrollbar relative mt-8 cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing sm:mt-12"
+            className="no-scrollbar relative mt-8 overflow-x-hidden sm:mt-12"
             style={{
               maskImage:
                 'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',

@@ -39,7 +39,7 @@ export function Gallery() {
                 initial={reduced ? false : { opacity: 0, scale: 0.96 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, margin: '0px 0px -10% 0px' }}
-                transition={{ duration: 0.4, ease: EASE, delay: i * 0.1 }}
+                transition={{ duration: 0.3, ease: EASE, delay: i * 0.05 }}
                 className="group relative flex-1 overflow-hidden border border-line bg-white/50 transition-shadow duration-500 hover:shadow-[0_36px_70px_-30px_rgba(31,52,43,0.45)]"
               >
                 <picture>

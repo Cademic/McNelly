@@ -46,7 +46,7 @@ export function Contact() {
                 <iframe
                   title={`Map showing ${site.company} at ${site.address.street}, ${site.address.locality}`}
                   src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
-                  loading="lazy"
+                  loading="eager"
                   referrerPolicy="no-referrer-when-downgrade"
                   className="block h-56 w-full"
                 />

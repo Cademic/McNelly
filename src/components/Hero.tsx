@@ -74,11 +74,11 @@ export function Hero() {
 
   const container = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.11, delayChildren: 0.15 } },
+    show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
   }
   const item = {
-    hidden: { opacity: 0, y: 22 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE } },
+    hidden: { opacity: 0, y: 18 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
   }
 
   return (

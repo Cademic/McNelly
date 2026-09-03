@@ -68,7 +68,7 @@ export function Navbar() {
     <motion.header
       initial={reduced ? false : { y: -48, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: EASE }}
+      transition={{ duration: 0.35, ease: EASE }}
       className="sticky top-0 z-50 border-b border-transparent bg-sand"
     >
       <div className="mx-auto flex h-nav max-w-[1360px] items-center justify-between px-5 lg:px-12">
