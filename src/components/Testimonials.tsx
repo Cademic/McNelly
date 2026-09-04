@@ -29,11 +29,9 @@ const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
 
 const Quote = () => (
   <svg
-    width="24"
-    height="24"
     viewBox="0 0 24 24"
     fill="currentColor"
-    className="text-clay-soft"
+    className="h-[14px] w-[14px] text-clay-soft sm:h-6 sm:w-6"
     aria-hidden="true"
   >
     <path d="M9.5 6C6.5 7.5 5 10 5 13v5h6v-6H8c0-2 .8-3.4 2.5-4.3L9.5 6zm9 0c-3 1.5-4.5 4-4.5 7v5h6v-6h-3c0-2 .8-3.4 2.5-4.3L18.5 6z" />
@@ -44,28 +42,37 @@ type Testimonial = (typeof testimonials)[number]
 
 function Card({ t }: { t: Testimonial }) {
   return (
-    <figure className="flex h-full w-auto min-w-[180px] shrink-0 flex-col overflow-hidden border border-line bg-white/65 backdrop-blur-sm">
+    <figure className="relative flex w-auto min-w-[104px] shrink-0 flex-col overflow-hidden border border-line">
+      {/* The photo sits behind the whole card. */}
       <picture>
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
           src={t.image}
-          alt={t.title || `Project completed for ${t.name}`}
+          alt=""
+          aria-hidden="true"
           loading="lazy"
-          className="h-[84px] w-full shrink-0 object-cover sm:h-[110px]"
+          className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
         />
       </picture>
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      {/* Wash over the photo to keep the text readable. */}
+      <div className="absolute inset-0 bg-white/45 backdrop-blur-[2px]" />
+
+      <div className="relative flex flex-1 flex-col p-2.5 sm:p-5">
         <Quote />
-        {/* Width follows the text: short quotes make a narrow card, long ones
-            wrap only once they hit the max measure. */}
-        <blockquote className="mt-2 w-max max-w-[240px] text-[12.5px] leading-relaxed text-ink-soft sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px]">
+        {/* Width follows the text: short quotes size to a single line, longer
+            ones grow wider up to the max measure before they wrap. */}
+        <blockquote className="mt-1 w-max max-w-[230px] text-[10px] font-medium leading-snug text-black sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px] sm:leading-relaxed">
           “{t.quote}”
         </blockquote>
-        <figcaption className="mt-auto max-w-[240px] border-t border-line pt-3 sm:max-w-[340px] sm:pt-4">
-          <span className="block font-semibold text-ink">{t.name}</span>
+        <figcaption className="mt-auto max-w-[230px] border-t border-white/40 pt-2 sm:max-w-[340px] sm:pt-4">
+          <span className="block text-[11px] font-bold text-black sm:text-base">
+            {t.name}
+          </span>
           {t.title && (
-            <span className="mt-0.5 block text-sm text-ink-soft">{t.title}</span>
+            <span className="block text-[10px] font-medium text-black sm:mt-0.5 sm:text-sm">
+              {t.title}
+            </span>
           )}
         </figcaption>
       </div>
@@ -104,39 +111,113 @@ export function Testimonials() {
 
     // Own accumulator: mobile browsers round el.scrollLeft to an integer, so
     // `scrollLeft += 0.4` never budges. Track the true position in JS and write
-    // the whole value every frame instead.
+    // the whole value every frame while the drift owns the track.
     let pos = unit()
     el.scrollLeft = pos
 
-    // Hovering holds the drift until the pointer leaves.
+    // Snap back toward the middle copy near either edge — the three copies are
+    // identical so the jump is invisible, which makes the scroll feel endless.
+    const wrap = () => {
+      const u = unit()
+      if (u === 0) return
+      if (pos > u * 1.5) pos -= u
+      else if (pos < u * 0.5) pos += u
+      el.scrollLeft = pos
+    }
+
+    const hold = (ms: number) => {
+      pausedUntil.current = Math.max(pausedUntil.current, performance.now() + ms)
+    }
+
+    // Mouse drag-to-pan state. Touch is left to the browser's native scrolling
+    // so a finger can still swipe the page up and down while flicking the row.
+    let drag = false
+    let startX = 0
+    let startScroll = 0
+
+    // Mouse: hover holds the drift; leaving resumes it right away.
     const onEnter = () => {
       pausedUntil.current = Infinity
     }
     const onLeave = () => {
+      drag = false
       pausedUntil.current = 0
     }
+
+    // Trackpad / wheel: native horizontal scroll does the work, we just pause.
+    const onWheel = () => hold(1800)
+
+    // Touch: let the browser scroll the row natively (so a finger can still
+    // swipe the page up/down too). Freeze the drift while a finger is down and
+    // for a couple of seconds after it lifts.
+    const onTouchStart = () => {
+      pausedUntil.current = Infinity
+    }
+    const onTouchMove = () => {
+      pausedUntil.current = Infinity
+    }
+    const onTouchEnd = () => {
+      pausedUntil.current = performance.now() + 2500
+    }
+
+    // Mouse drag-to-pan (pointer events are mouse-only here).
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      drag = true
+      startX = e.clientX
+      startScroll = el.scrollLeft
+      el.setPointerCapture?.(e.pointerId)
+      pausedUntil.current = Infinity
+    }
+    const onPointerMove = (e: PointerEvent) => {
+      if (!drag || e.pointerType !== 'mouse') return
+      el.scrollLeft = startScroll - (e.clientX - startX)
+      pos = el.scrollLeft
+    }
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || !drag) return
+      drag = false
+      el.releasePointerCapture?.(e.pointerId)
+      pos = el.scrollLeft
+    }
+
     el.addEventListener('mouseenter', onEnter)
     el.addEventListener('mouseleave', onLeave)
+    el.addEventListener('wheel', onWheel, { passive: true })
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: true })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchcancel', onTouchEnd)
+    el.addEventListener('pointerdown', onPointerDown)
+    el.addEventListener('pointermove', onPointerMove)
+    el.addEventListener('pointerup', onPointerUp)
+    el.addEventListener('pointercancel', onPointerUp)
 
     let raf = 0
     const SPEED = 0.4 // px per frame ≈ 24px/s
     const tick = () => {
       const u = unit()
       if (u > 0) {
-        if (!reduced && performance.now() >= pausedUntil.current) pos += SPEED
         if (nudge.current !== 0) {
+          // Arrow jump — always honored, even mid-pause.
           const eat =
             reduced || Math.abs(nudge.current) < 1
               ? nudge.current
               : nudge.current * 0.18
           pos += eat
           nudge.current -= eat
+          wrap()
+          el.scrollLeft = pos
+        } else if (!reduced && performance.now() >= pausedUntil.current) {
+          pos += SPEED
+          wrap()
+          el.scrollLeft = pos
+        } else {
+          // User owns the scroll (native drag / momentum / wheel) — follow it
+          // and keep the endless-wrap alive.
+          pos = el.scrollLeft
+          wrap()
         }
-        // Stay parked on the middle copy so it can drift either way forever —
-        // the copies are identical so the wrap is invisible.
-        if (pos >= u * 2) pos -= u
-        else if (pos < u) pos += u
-        el.scrollLeft = pos
       }
       raf = requestAnimationFrame(tick)
     }
@@ -146,6 +227,15 @@ export function Testimonials() {
       cancelAnimationFrame(raf)
       el.removeEventListener('mouseenter', onEnter)
       el.removeEventListener('mouseleave', onLeave)
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchEnd)
+      el.removeEventListener('pointerdown', onPointerDown)
+      el.removeEventListener('pointermove', onPointerMove)
+      el.removeEventListener('pointerup', onPointerUp)
+      el.removeEventListener('pointercancel', onPointerUp)
     }
   }, [reduced])
 
@@ -153,38 +243,16 @@ export function Testimonials() {
     <section id="testimonials" className="scroll-mt-24">
       <div className="mx-auto max-w-[1360px] px-5 py-24 lg:px-12 lg:py-[120px]">
         <Reveal>
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="eyebrow text-clay">Testimonials</p>
-              <h2 className="mt-5 max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
-                What our clients say.
-              </h2>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => step(-1)}
-                aria-label="Previous testimonials"
-                className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
-              >
-                <Chevron dir="left" />
-              </button>
-              <button
-                type="button"
-                onClick={() => step(1)}
-                aria-label="Next testimonials"
-                className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
-              >
-                <Chevron dir="right" />
-              </button>
-            </div>
-          </div>
+          <p className="eyebrow text-clay">Testimonials</p>
+          <h2 className="mt-5 max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
+            What our clients say.
+          </h2>
         </Reveal>
 
         <Reveal delay={80}>
           <div
             ref={viewportRef}
-            className="no-scrollbar relative mt-8 overflow-x-hidden sm:mt-12"
+            className="no-scrollbar relative mt-5 cursor-grab select-none overflow-x-auto overscroll-x-contain active:cursor-grabbing sm:mt-12"
             style={{
               maskImage:
                 'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
@@ -192,17 +260,38 @@ export function Testimonials() {
                 'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
             }}
           >
-            <ul className="flex w-max items-stretch">
+            <ul className="flex w-max items-start">
               {loop.map((t, i) => (
                 <li
                   key={`${t.name}-${i}`}
                   aria-hidden={i >= testimonials.length}
-                  className="flex pr-3 sm:pr-6"
+                  className="flex pr-2 sm:pr-6"
                 >
                   <Card t={t} />
                 </li>
               ))}
             </ul>
+          </div>
+        </Reveal>
+
+        <Reveal delay={120}>
+          <div className="mt-8 flex items-center justify-center gap-3 sm:mt-10">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Previous testimonials"
+              className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
+            >
+              <Chevron dir="left" />
+            </button>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Next testimonials"
+              className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
+            >
+              <Chevron dir="right" />
+            </button>
           </div>
         </Reveal>
       </div>
