@@ -11,9 +11,30 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+coverage
+
+# Env files
+.env
+.env.local
+.env.*.local
 
 # Full-resolution source photos (optimized copies live in public/photos)
 photos-src
+
+# Raw AI image-generator exports (default filenames) — move to photos-src/
+# once optimized and renamed, don't commit the untouched export
+public/photos/ChatGPT Image*
+public/photos/Gemini_Generated*
+public/photos/Midjourney*
+public/photos/DALL*E*
+
+# AI tool configs/artifacts
+.claude/settings.local.json
+.cursor/
+.windsurf/
+.aider*
+.continue/
 
 # Editor directories and files
 .vscode/*

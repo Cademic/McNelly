@@ -41,10 +41,10 @@ export const hero = {
 // on a calm backdrop and scale up as the pinned hero is scrolled past, while
 // the headline scrolls up the page at natural speed (Glide-style).
 export const heroImages = [
-  '/photos/hero-navy-farmhouse.png',
-  '/photos/hero-green-ranch.png',
-  '/photos/hero-black-barn.png',
-  '/photos/hero-framing.png',
+  { src: '/photos/hero-navy-farmhouse.png' },
+  { src: '/photos/hero-green-ranch.png' },
+  { src: '/photos/hero-black-barn.png' },
+  { src: '/photos/hero-navy-ranch.png', scale: 1.35 },
 ] as const
 
 export const services = [
@@ -82,8 +82,8 @@ export const buildSteps = [
   },
   {
     step: 'Finished home',
-    image: '/photos/gallery-craftsman-winter.jpg',
-    alt: 'Completed craftsman ranch home with attached garage in winter',
+    image: '/photos/gallery-craftsman.jpg',
+    alt: 'Completed craftsman ranch home with attached garage',
   },
 ] as const
 

@@ -107,11 +107,15 @@ export function Hero() {
             }}
           >
             <picture>
-              <source srcSet={heroImages[index].replace(/\.png$/, '.webp')} type="image/webp" />
+              <source srcSet={heroImages[index].src.replace(/\.png$/, '.webp')} type="image/webp" />
               <img
-                src={heroImages[index]}
+                src={heroImages[index].src}
                 alt=""
                 className="w-full max-w-[1700px] max-h-[56vh] object-contain object-bottom drop-shadow-[0_36px_60px_rgba(30,41,37,0.22)]"
+                style={{
+                  transform: `scale(${heroImages[index].scale ?? 1})`,
+                  transformOrigin: 'bottom center',
+                }}
                 loading="eager"
                 fetchPriority="high"
               />
@@ -136,7 +140,7 @@ export function Hero() {
           </motion.p>
           <motion.h1
             variants={item}
-            className="mt-5 max-w-3xl font-display text-[clamp(2.4rem,5.6vw,4.5rem)] font-medium leading-[1.03] tracking-[-0.03em] text-ink [text-shadow:0_1px_20px_rgba(247,248,243,0.6)]"
+            className="mt-5 max-w-3xl font-display text-[clamp(2.4rem,5.6vw,4.5rem)] font-medium leading-[1.03] tracking-[-0.03em] text-ink [-webkit-text-stroke:5px_var(--color-sand)] [paint-order:stroke_fill]"
           >
             {hero.headline[0]}
             <br />
