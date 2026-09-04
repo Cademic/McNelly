@@ -50,22 +50,22 @@ export function Hero() {
   //   • the headline column translates up 1:1 with scroll — so it reads as
   //     normal page scrolling off the top, while the image stays put and zooms
   //     (the Glide hero effect).
-  // Drive the parallax off the hero's own scroll progress (0 → 1 across its
-  // height) instead of a JS-measured pixel height. Measuring in px meant any
-  // spurious `resize` — e.g. the mobile URL bar sliding back into view as you
-  // scroll up toward the top — recomputed these ranges and made the headline
-  // and buttons jump ("bounce"). Progress is resolution-independent, so the
-  // return trip tracks scroll exactly.
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end start'],
-  })
+  const { scrollY } = useScroll()
+  const [heroH, setHeroH] = useState(0)
+  useEffect(() => {
+    const measure = () =>
+      setHeroH(sectionRef.current?.offsetHeight || window.innerHeight)
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
+  const span = heroH || 1
 
-  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.55])
-  const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '-4%'])
+  const imgScale = useTransform(scrollY, [0, span], [1, 1.55])
+  const imgY = useTransform(scrollY, [0, span], ['0%', '-4%'])
   // Headline scrolls up at (almost) natural speed and fades out near the end.
-  const textY = useTransform(scrollYProgress, [0, 1], ['0%', '-96%'])
-  const textOpacity = useTransform(scrollYProgress, [0.55, 0.92], [1, 0])
+  const textY = useTransform(scrollY, [0, span], [0, -span * 0.96])
+  const textOpacity = useTransform(scrollY, [span * 0.55, span * 0.92], [1, 0])
 
   const textStyle = reduced ? undefined : { y: textY, opacity: textOpacity }
   const imgStyle = reduced
