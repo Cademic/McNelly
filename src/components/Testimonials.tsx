@@ -55,8 +55,9 @@ function Card({ t }: { t: Testimonial }) {
           draggable={false}
         />
       </picture>
-      {/* Wash over the photo to keep the text readable. */}
-      <div className="absolute inset-0 bg-white/45 backdrop-blur-[2px]" />
+      {/* Wash over the photo to keep the text readable. No backdrop-blur: it
+          repaints every scroll frame on mobile and flashes white. */}
+      <div className="absolute inset-0 bg-white/50" />
 
       <div className="relative flex flex-1 flex-col p-2.5 sm:p-5">
         <Quote />
@@ -114,14 +115,20 @@ export function Testimonials() {
     // the whole value every frame while the drift owns the track.
     let pos = unit()
     el.scrollLeft = pos
+    // Last value *we* wrote — lets the loop tell its own writes apart from the
+    // browser moving the scroll (finger drag, trackpad, fling momentum).
+    let lastLeft = Math.round(el.scrollLeft)
 
     // Snap back toward the middle copy near either edge — the three copies are
     // identical so the jump is invisible, which makes the scroll feel endless.
+    // Writes el.scrollLeft ONLY when it actually wraps: touching it every frame
+    // kills native momentum on mobile.
     const wrap = () => {
       const u = unit()
       if (u === 0) return
       if (pos > u * 1.5) pos -= u
       else if (pos < u * 0.5) pos += u
+      else return
       el.scrollLeft = pos
     }
 
@@ -198,7 +205,19 @@ export function Testimonials() {
     const tick = () => {
       const u = unit()
       if (u > 0) {
-        if (nudge.current !== 0) {
+        // Browser moved the scroll since our last write — finger drag, trackpad,
+        // or leftover fling momentum. Yield: follow it, hold the drift until it
+        // settles, and don't write scrollLeft (that's what caused the stutter).
+        const nativelyMoved = Math.abs(el.scrollLeft - lastLeft) > 2
+
+        if (nativelyMoved) {
+          pos = el.scrollLeft
+          pausedUntil.current = Math.max(
+            pausedUntil.current,
+            performance.now() + 1000,
+          )
+          wrap()
+        } else if (nudge.current !== 0) {
           // Arrow jump — always honored, even mid-pause.
           const eat =
             reduced || Math.abs(nudge.current) < 1
@@ -213,11 +232,12 @@ export function Testimonials() {
           wrap()
           el.scrollLeft = pos
         } else {
-          // User owns the scroll (native drag / momentum / wheel) — follow it
-          // and keep the endless-wrap alive.
+          // Paused and still — stay synced so the drift resumes from here.
           pos = el.scrollLeft
           wrap()
         }
+
+        lastLeft = Math.round(el.scrollLeft)
       }
       raf = requestAnimationFrame(tick)
     }
@@ -250,27 +270,27 @@ export function Testimonials() {
         </Reveal>
 
         <Reveal delay={80}>
-          <div
-            ref={viewportRef}
-            className="no-scrollbar relative mt-5 cursor-grab select-none overflow-x-auto overscroll-x-contain active:cursor-grabbing sm:mt-12"
-            style={{
-              maskImage:
-                'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
-              WebkitMaskImage:
-                'linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)',
-            }}
-          >
-            <ul className="flex w-max items-start">
-              {loop.map((t, i) => (
-                <li
-                  key={`${t.name}-${i}`}
-                  aria-hidden={i >= testimonials.length}
-                  className="flex pr-2 sm:pr-6"
-                >
-                  <Card t={t} />
-                </li>
-              ))}
-            </ul>
+          <div className="relative mt-5 sm:mt-12">
+            <div
+              ref={viewportRef}
+              className="no-scrollbar cursor-grab select-none overflow-x-auto overscroll-x-contain active:cursor-grabbing"
+            >
+              <ul className="flex w-max items-start">
+                {loop.map((t, i) => (
+                  <li
+                    key={`${t.name}-${i}`}
+                    aria-hidden={i >= testimonials.length}
+                    className="flex pr-2 sm:pr-6"
+                  >
+                    <Card t={t} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Edge fades — plain overlays instead of mask-image, which forces a
+                full re-raster of the scroller every frame on mobile (white flash). */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-sand to-transparent sm:w-16" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-sand to-transparent sm:w-16" />
           </div>
         </Reveal>
 
