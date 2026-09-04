@@ -31,7 +31,7 @@ const Quote = () => (
   <svg
     viewBox="0 0 24 24"
     fill="currentColor"
-    className="h-[14px] w-[14px] text-clay-soft sm:h-6 sm:w-6"
+    className="h-5 w-5 text-clay-soft sm:h-6 sm:w-6"
     aria-hidden="true"
   >
     <path d="M9.5 6C6.5 7.5 5 10 5 13v5h6v-6H8c0-2 .8-3.4 2.5-4.3L9.5 6zm9 0c-3 1.5-4.5 4-4.5 7v5h6v-6h-3c0-2 .8-3.4 2.5-4.3L18.5 6z" />
@@ -42,7 +42,7 @@ type Testimonial = (typeof testimonials)[number]
 
 function Card({ t }: { t: Testimonial }) {
   return (
-    <figure className="relative flex w-auto min-w-[104px] shrink-0 flex-col overflow-hidden border border-line">
+    <figure className="relative flex w-auto min-w-[168px] shrink-0 flex-col overflow-hidden border border-line">
       {/* The photo sits behind the whole card. */}
       <picture>
         <source srcSet={webp(t.image)} type="image/webp" />
@@ -51,27 +51,31 @@ function Card({ t }: { t: Testimonial }) {
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover"
+          // Static blur baked into the image itself — unlike backdrop-blur it
+          // doesn't re-raster per scroll frame. scale-110 hides the soft edges
+          // the blur pulls in from outside the frame.
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-[3px]"
           draggable={false}
         />
       </picture>
-      {/* Wash over the photo to keep the text readable. No backdrop-blur: it
-          repaints every scroll frame on mobile and flashes white. */}
-      <div className="absolute inset-0 bg-white/50" />
+      {/* Wash over the (already blurred) photo to keep the text readable. No
+          backdrop-blur: it repaints every scroll frame on mobile and flashes
+          white. */}
+      <div className="absolute inset-0 bg-white/68" />
 
-      <div className="relative flex flex-1 flex-col p-2.5 sm:p-5">
+      <div className="relative flex flex-1 flex-col p-4 sm:p-5">
         <Quote />
         {/* Width follows the text: short quotes size to a single line, longer
             ones grow wider up to the max measure before they wrap. */}
-        <blockquote className="mt-1 w-max max-w-[230px] text-[10px] font-medium leading-snug text-black sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px] sm:leading-relaxed">
+        <blockquote className="mt-2 w-max max-w-[300px] text-[12.5px] font-medium leading-snug text-black sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px] sm:leading-relaxed">
           “{t.quote}”
         </blockquote>
-        <figcaption className="mt-auto max-w-[230px] border-t border-white/40 pt-2 sm:max-w-[340px] sm:pt-4">
-          <span className="block text-[11px] font-bold text-black sm:text-base">
+        <figcaption className="mt-auto max-w-[300px] border-t border-white/40 pt-3 sm:max-w-[340px] sm:pt-4">
+          <span className="block text-[13px] font-bold text-black sm:text-base">
             {t.name}
           </span>
           {t.title && (
-            <span className="block text-[10px] font-medium text-black sm:mt-0.5 sm:text-sm">
+            <span className="block text-[11px] font-medium text-black sm:mt-0.5 sm:text-sm">
               {t.title}
             </span>
           )}
@@ -280,7 +284,7 @@ export function Testimonials() {
                   <li
                     key={`${t.name}-${i}`}
                     aria-hidden={i >= testimonials.length}
-                    className="flex pr-2 sm:pr-6"
+                    className="flex pr-3 sm:pr-6"
                   >
                     <Card t={t} />
                   </li>
