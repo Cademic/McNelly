@@ -40,12 +40,12 @@ export const hero = {
 // Hero cut-outs — transparent PNGs of finished + in-progress homes. They sit
 // on a calm backdrop and scale up as the pinned hero is scrolled past, while
 // the headline scrolls up the page at natural speed (Glide-style).
-export const heroImages = [
+export const heroImages: ReadonlyArray<{ src: string; scale?: number }> = [
   { src: '/photos/hero-navy-farmhouse.png' },
   { src: '/photos/hero-green-ranch.png' },
   { src: '/photos/hero-black-barn.png' },
   { src: '/photos/hero-navy-ranch.png', scale: 1.35 },
-] as const
+]
 
 export const services = [
   {
