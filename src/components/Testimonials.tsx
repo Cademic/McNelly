@@ -42,8 +42,8 @@ type Testimonial = (typeof testimonials)[number]
 
 function Card({ t }: { t: Testimonial }) {
   return (
-    <figure className="relative flex w-auto min-w-[168px] shrink-0 flex-col overflow-hidden border border-line">
-      {/* The photo sits behind the whole card. */}
+    <figure className="flex w-[280px] shrink-0 flex-col overflow-hidden border border-line bg-white sm:w-[360px]">
+      {/* Photo sits on top of the card, shown whole rather than as a backdrop. */}
       <picture>
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
@@ -51,31 +51,22 @@ function Card({ t }: { t: Testimonial }) {
           alt=""
           aria-hidden="true"
           loading="lazy"
-          // Static blur baked into the image itself — unlike backdrop-blur it
-          // doesn't re-raster per scroll frame. scale-110 hides the soft edges
-          // the blur pulls in from outside the frame.
-          className="absolute inset-0 h-full w-full scale-110 object-cover blur-[3px]"
+          className="aspect-[16/9] w-full object-cover"
           draggable={false}
         />
       </picture>
-      {/* Wash over the (already blurred) photo to keep the text readable. No
-          backdrop-blur: it repaints every scroll frame on mobile and flashes
-          white. */}
-      <div className="absolute inset-0 bg-white/68" />
 
-      <div className="relative flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         <Quote />
-        {/* Width follows the text: short quotes size to a single line, longer
-            ones grow wider up to the max measure before they wrap. */}
-        <blockquote className="mt-2 w-max max-w-[300px] text-[12.5px] font-medium leading-snug text-black sm:mt-2.5 sm:max-w-[340px] sm:text-[13.5px] sm:leading-relaxed">
+        <blockquote className="mt-2 text-[12.5px] font-medium leading-snug text-black sm:mt-2.5 sm:text-[13.5px] sm:leading-relaxed">
           “{t.quote}”
         </blockquote>
-        <figcaption className="mt-auto max-w-[300px] border-t border-white/40 pt-3 sm:max-w-[340px] sm:pt-4">
-          <span className="block text-[13px] font-bold text-black sm:text-base">
+        <figcaption className="mt-auto border-t border-line pt-3 sm:pt-4">
+          <span className="block text-[11px] font-medium text-black sm:text-xs">
             {t.name}
           </span>
           {t.title && (
-            <span className="block text-[11px] font-medium text-black sm:mt-0.5 sm:text-sm">
+            <span className="block text-[10px] font-normal text-black/70 sm:mt-0.5 sm:text-[11px]">
               {t.title}
             </span>
           )}
