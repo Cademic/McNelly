@@ -1,50 +1,36 @@
-import { useEffect, useRef } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { testimonials } from '../data/site'
 import { Reveal } from './Reveal'
 
-const webp = (src: string) => src.replace(/\.jpg$/, '.webp')
+const webp = (src: string) => src.replace(/\.(jpg|png)$/, '.webp')
 
-const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
+const EASE = [0.16, 1, 0.3, 1] as const
+const AUTOPLAY_MS = 7000
+
+const Arrow = ({ direction }: { direction: 'left' | 'right' }) => (
   <svg
-    width="17"
-    height="17"
+    width="28"
+    height="28"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.6"
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
-    className={
-      'transition-transform duration-300 ease-out ' +
-      (dir === 'left'
-        ? 'group-hover:-translate-x-0.5'
-        : 'group-hover:translate-x-0.5')
-    }
+    className={direction === 'left' ? 'rotate-180' : undefined}
   >
-    <path d={dir === 'left' ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
-  </svg>
-)
-
-const Quote = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="h-5 w-5 text-clay-soft sm:h-6 sm:w-6"
-    aria-hidden="true"
-  >
-    <path d="M9.5 6C6.5 7.5 5 10 5 13v5h6v-6H8c0-2 .8-3.4 2.5-4.3L9.5 6zm9 0c-3 1.5-4.5 4-4.5 7v5h6v-6h-3c0-2 .8-3.4 2.5-4.3L18.5 6z" />
+    <path d="M9 5l7 7-7 7" />
   </svg>
 )
 
 type Testimonial = (typeof testimonials)[number]
 
-function Card({ t }: { t: Testimonial }) {
+function SlideContent({ t }: { t: Testimonial }) {
   return (
-    <figure className="flex w-[280px] shrink-0 flex-col overflow-hidden border border-line bg-white sm:w-[360px]">
-      {/* Photo sits on top of the card, shown whole rather than as a backdrop. */}
-      <picture>
+    <>
+      <picture className="block w-full overflow-hidden">
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
           src={t.image}
@@ -56,257 +42,167 @@ function Card({ t }: { t: Testimonial }) {
         />
       </picture>
 
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <Quote />
-        <blockquote className="mt-2 text-[12.5px] font-medium leading-snug text-black sm:mt-2.5 sm:text-[13.5px] sm:leading-relaxed">
-          “{t.quote}”
-        </blockquote>
-        <figcaption className="mt-auto border-t border-line pt-3 sm:pt-4">
-          <span className="block text-[11px] font-medium text-black sm:text-xs">
-            {t.name}
+      <blockquote className="mt-6 max-w-[640px] whitespace-pre-line text-[13.5px] font-medium leading-relaxed text-black sm:mt-8 sm:text-base">
+        “{t.quote}”
+      </blockquote>
+
+      <figcaption className="mt-6">
+        <span className="block text-[12px] font-semibold text-black sm:text-sm">
+          {t.name}
+        </span>
+        {t.title && (
+          <span className="mt-0.5 block text-[11px] font-normal text-black/70 sm:text-xs">
+            {t.title}
           </span>
-          {t.title && (
-            <span className="block text-[10px] font-normal text-black/70 sm:mt-0.5 sm:text-[11px]">
-              {t.title}
-            </span>
-          )}
-        </figcaption>
-      </div>
-    </figure>
+        )}
+      </figcaption>
+    </>
   )
 }
 
 export function Testimonials() {
   const reduced = useReducedMotion()
-  const viewportRef = useRef<HTMLDivElement>(null)
-  // While > now, the auto-advance is paused (user is interacting).
-  const pausedUntil = useRef(0)
-  // Pixels the arrow controls still owe the track; the rAF loop eases this to 0.
-  const nudge = useRef(0)
+  const count = testimonials.length
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const dirRef = useRef(1)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [trackWidth, setTrackWidth] = useState(0)
 
-  // Three identical copies so the scroll position can wrap seamlessly in
-  // either direction (native scroll can't go past 0, so we sit in the middle).
-  const loop = [...testimonials, ...testimonials, ...testimonials]
-
-  // Arrow controls: queue a one-card jump and hold the auto-drift for a beat so
-  // it doesn't fight the reader.
-  const step = (dir: 1 | -1) => {
-    const el = viewportRef.current
+  // Measure the slide's own pixel width so the swipe can animate `left` in
+  // px. We deliberately animate `left` (layout) instead of a transform —
+  // GPU-compositing a transform on a large full-bleed image here left a
+  // stale torn/striped raster artifact at the trailing edge after the
+  // transition settled, clipped by the track's `overflow-hidden`.
+  useEffect(() => {
+    const el = trackRef.current
     if (!el) return
-    const card = el.querySelector('li')?.getBoundingClientRect().width
-    const by = card && card > 0 ? card : el.clientWidth * 0.8
-    nudge.current += dir * by
-    pausedUntil.current = performance.now() + 2500
-  }
+    const observer = new ResizeObserver(([entry]) => setTrackWidth(entry.contentRect.width))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const goTo = useCallback(
+    (next: number) => {
+      dirRef.current = next > index || (index === count - 1 && next === 0) ? 1 : -1
+      setIndex(((next % count) + count) % count)
+    },
+    [count, index],
+  )
 
   useEffect(() => {
-    const el = viewportRef.current
-    if (!el) return
+    if (paused || count <= 1) return
+    const t = setInterval(() => {
+      dirRef.current = 1
+      setIndex((i) => (i + 1) % count)
+    }, AUTOPLAY_MS)
+    return () => clearInterval(t)
+  }, [paused, count])
 
-    const unit = () => el.scrollWidth / 3
+  const t = testimonials[index]
 
-    // Own accumulator: mobile browsers round el.scrollLeft to an integer, so
-    // `scrollLeft += 0.4` never budges. Track the true position in JS and write
-    // the whole value every frame while the drift owns the track.
-    let pos = unit()
-    el.scrollLeft = pos
-    // Last value *we* wrote — lets the loop tell its own writes apart from the
-    // browser moving the scroll (finger drag, trackpad, fling momentum).
-    let lastLeft = Math.round(el.scrollLeft)
-
-    // Snap back toward the middle copy near either edge — the three copies are
-    // identical so the jump is invisible, which makes the scroll feel endless.
-    // Writes el.scrollLeft ONLY when it actually wraps: touching it every frame
-    // kills native momentum on mobile.
-    const wrap = () => {
-      const u = unit()
-      if (u === 0) return
-      if (pos > u * 1.5) pos -= u
-      else if (pos < u * 0.5) pos += u
-      else return
-      el.scrollLeft = pos
-    }
-
-    const hold = (ms: number) => {
-      pausedUntil.current = Math.max(pausedUntil.current, performance.now() + ms)
-    }
-
-    // Mouse drag-to-pan state. Touch is left to the browser's native scrolling
-    // so a finger can still swipe the page up and down while flicking the row.
-    let drag = false
-    let startX = 0
-    let startScroll = 0
-
-    // Mouse: hover holds the drift; leaving resumes it right away.
-    const onEnter = () => {
-      pausedUntil.current = Infinity
-    }
-    const onLeave = () => {
-      drag = false
-      pausedUntil.current = 0
-    }
-
-    // Trackpad / wheel: native horizontal scroll does the work, we just pause.
-    const onWheel = () => hold(1800)
-
-    // Touch: let the browser scroll the row natively (so a finger can still
-    // swipe the page up/down too). Freeze the drift while a finger is down and
-    // for a couple of seconds after it lifts.
-    const onTouchStart = () => {
-      pausedUntil.current = Infinity
-    }
-    const onTouchMove = () => {
-      pausedUntil.current = Infinity
-    }
-    const onTouchEnd = () => {
-      pausedUntil.current = performance.now() + 2500
-    }
-
-    // Mouse drag-to-pan (pointer events are mouse-only here).
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return
-      drag = true
-      startX = e.clientX
-      startScroll = el.scrollLeft
-      el.setPointerCapture?.(e.pointerId)
-      pausedUntil.current = Infinity
-    }
-    const onPointerMove = (e: PointerEvent) => {
-      if (!drag || e.pointerType !== 'mouse') return
-      el.scrollLeft = startScroll - (e.clientX - startX)
-      pos = el.scrollLeft
-    }
-    const onPointerUp = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse' || !drag) return
-      drag = false
-      el.releasePointerCapture?.(e.pointerId)
-      pos = el.scrollLeft
-    }
-
-    el.addEventListener('mouseenter', onEnter)
-    el.addEventListener('mouseleave', onLeave)
-    el.addEventListener('wheel', onWheel, { passive: true })
-    el.addEventListener('touchstart', onTouchStart, { passive: true })
-    el.addEventListener('touchmove', onTouchMove, { passive: true })
-    el.addEventListener('touchend', onTouchEnd)
-    el.addEventListener('touchcancel', onTouchEnd)
-    el.addEventListener('pointerdown', onPointerDown)
-    el.addEventListener('pointermove', onPointerMove)
-    el.addEventListener('pointerup', onPointerUp)
-    el.addEventListener('pointercancel', onPointerUp)
-
-    let raf = 0
-    const SPEED = 0.4 // px per frame ≈ 24px/s
-    const tick = () => {
-      const u = unit()
-      if (u > 0) {
-        // Browser moved the scroll since our last write — finger drag, trackpad,
-        // or leftover fling momentum. Yield: follow it, hold the drift until it
-        // settles, and don't write scrollLeft (that's what caused the stutter).
-        const nativelyMoved = Math.abs(el.scrollLeft - lastLeft) > 2
-
-        if (nativelyMoved) {
-          pos = el.scrollLeft
-          pausedUntil.current = Math.max(
-            pausedUntil.current,
-            performance.now() + 1000,
-          )
-          wrap()
-        } else if (nudge.current !== 0) {
-          // Arrow jump — always honored, even mid-pause.
-          const eat =
-            reduced || Math.abs(nudge.current) < 1
-              ? nudge.current
-              : nudge.current * 0.18
-          pos += eat
-          nudge.current -= eat
-          wrap()
-          el.scrollLeft = pos
-        } else if (!reduced && performance.now() >= pausedUntil.current) {
-          pos += SPEED
-          wrap()
-          el.scrollLeft = pos
-        } else {
-          // Paused and still — stay synced so the drift resumes from here.
-          pos = el.scrollLeft
-          wrap()
-        }
-
-        lastLeft = Math.round(el.scrollLeft)
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-
-    return () => {
-      cancelAnimationFrame(raf)
-      el.removeEventListener('mouseenter', onEnter)
-      el.removeEventListener('mouseleave', onLeave)
-      el.removeEventListener('wheel', onWheel)
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
-      el.removeEventListener('touchend', onTouchEnd)
-      el.removeEventListener('touchcancel', onTouchEnd)
-      el.removeEventListener('pointerdown', onPointerDown)
-      el.removeEventListener('pointermove', onPointerMove)
-      el.removeEventListener('pointerup', onPointerUp)
-      el.removeEventListener('pointercancel', onPointerUp)
-    }
-  }, [reduced])
+  // Variant functions (rather than static initial/animate/exit objects) so
+  // that when direction reverses mid-stream, the slide currently animating
+  // out picks up the fresh direction too — AnimatePresence re-evaluates an
+  // exiting child's variants using the `custom` value passed to
+  // AnimatePresence itself (which is always current), not the value the
+  // child captured back when it entered.
+  const slideVariants = {
+    enter: (dir: number) => (reduced ? { opacity: 0, left: 0 } : { left: dir * trackWidth, opacity: 1 }),
+    center: { left: 0, opacity: 1 },
+    exit: (dir: number) => (reduced ? { opacity: 0, left: 0 } : { left: dir * -trackWidth, opacity: 1 }),
+  }
 
   return (
     <section id="testimonials" className="scroll-mt-24">
-      <div className="mx-auto max-w-[1360px] px-5 py-24 lg:px-12 lg:py-[120px]">
+      <div className="mx-auto max-w-[1000px] px-5 py-24 lg:px-12 lg:py-[120px]">
         <Reveal>
-          <p className="eyebrow text-clay">Testimonials</p>
-          <h2 className="mt-5 max-w-2xl font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
+          <p className="eyebrow text-center text-clay">Testimonials</p>
+          <h2 className="mx-auto mt-5 max-w-2xl text-center font-display text-[clamp(2rem,4vw,3.1rem)] font-medium leading-tight text-ink">
             What our clients say.
           </h2>
         </Reveal>
 
         <Reveal delay={80}>
-          <div className="relative mt-5 sm:mt-12">
-            <div
-              ref={viewportRef}
-              className="no-scrollbar cursor-grab select-none overflow-x-auto overscroll-x-contain active:cursor-grabbing"
-            >
-              <ul className="flex w-max items-start">
-                {loop.map((t, i) => (
-                  <li
-                    key={`${t.name}-${i}`}
-                    aria-hidden={i >= testimonials.length}
-                    className="flex pr-3 sm:pr-6"
-                  >
-                    <Card t={t} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Edge fades — plain overlays instead of mask-image, which forces a
-                full re-raster of the scroller every frame on mobile (white flash). */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-sand to-transparent sm:w-16" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-sand to-transparent sm:w-16" />
-          </div>
-        </Reveal>
+          <div
+            className="mt-12 sm:mt-16"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
+          >
+            <div ref={trackRef} className="relative overflow-hidden">
+              {/* Invisible sizer: every testimonial is stacked in the same grid
+                  cell so the box is always as tall as the longest one — this
+                  keeps the slideshow's footprint constant as slides change,
+                  instead of the page reflowing on every transition. */}
+              <div className="invisible px-6 py-10 sm:px-20 sm:py-14" aria-hidden="true">
+                <div className="grid">
+                  {testimonials.map((item) => (
+                    <div
+                      key={item.name}
+                      className="col-start-1 row-start-1 flex w-full flex-col items-start text-left"
+                    >
+                      <SlideContent t={item} />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-        <Reveal delay={120}>
-          <div className="mt-8 flex items-center justify-center gap-3 sm:mt-10">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              aria-label="Previous testimonials"
-              className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
-            >
-              <Chevron dir="left" />
-            </button>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              aria-label="Next testimonials"
-              className="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink outline-none transition-[color,background-color,border-color,transform] duration-300 ease-out hover:scale-110 hover:border-ink hover:bg-ink hover:text-white focus-visible:ring-2 focus-visible:ring-clay"
-            >
-              <Chevron dir="right" />
-            </button>
+              <AnimatePresence initial={false} custom={dirRef.current}>
+                <motion.div
+                  key={index}
+                  custom={dirRef.current}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.5, ease: EASE }}
+                  className="absolute top-0 flex h-full w-full flex-col items-start justify-center px-6 py-10 text-left sm:px-20 sm:py-14"
+                >
+                  <SlideContent t={t} />
+                </motion.div>
+              </AnimatePresence>
+
+              {count > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => goTo(index - 1)}
+                    aria-label="Previous testimonial"
+                    className="absolute left-0 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:left-2"
+                  >
+                    <Arrow direction="left" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goTo(index + 1)}
+                    aria-label="Next testimonial"
+                    className="absolute right-0 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:right-2"
+                  >
+                    <Arrow direction="right" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {count > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2.5">
+                {testimonials.map((item, i) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    onClick={() => goTo(i)}
+                    aria-label={`Show testimonial from ${item.name}`}
+                    aria-current={i === index}
+                    className={
+                      'h-2 w-2 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-clay ' +
+                      (i === index ? 'bg-clay' : 'bg-line hover:bg-clay-soft')
+                    }
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </Reveal>
       </div>

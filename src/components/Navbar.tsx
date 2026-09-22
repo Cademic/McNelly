@@ -77,7 +77,7 @@ export function Navbar() {
             <img
               src="/logo-full.png"
               alt={`${site.company} logo`}
-              className="h-10 w-auto sm:h-11"
+              className="h-14 w-auto sm:h-16"
             />
           </a>
 
