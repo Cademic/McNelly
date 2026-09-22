@@ -6,12 +6,11 @@ import { Reveal } from './Reveal'
 const webp = (src: string) => src.replace(/\.(jpg|png)$/, '.webp')
 
 const EASE = [0.16, 1, 0.3, 1] as const
-const AUTOPLAY_MS = 7000
 
-const Arrow = ({ direction }: { direction: 'left' | 'right' }) => (
+const Arrow = ({ direction, size = 28 }: { direction: 'left' | 'right'; size?: number }) => (
   <svg
-    width="28"
-    height="28"
+    width={size}
+    height={size}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -64,7 +63,6 @@ export function Testimonials() {
   const reduced = useReducedMotion()
   const count = testimonials.length
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
   const dirRef = useRef(1)
   const trackRef = useRef<HTMLDivElement>(null)
   const [trackWidth, setTrackWidth] = useState(0)
@@ -89,15 +87,6 @@ export function Testimonials() {
     },
     [count, index],
   )
-
-  useEffect(() => {
-    if (paused || count <= 1) return
-    const t = setInterval(() => {
-      dirRef.current = 1
-      setIndex((i) => (i + 1) % count)
-    }, AUTOPLAY_MS)
-    return () => clearInterval(t)
-  }, [paused, count])
 
   const t = testimonials[index]
 
@@ -124,14 +113,8 @@ export function Testimonials() {
         </Reveal>
 
         <Reveal delay={80}>
-          <div
-            className="mt-12 sm:mt-16"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onFocus={() => setPaused(true)}
-            onBlur={() => setPaused(false)}
-          >
-            <div ref={trackRef} className="relative overflow-hidden">
+          <div className="mt-12 sm:mt-16">
+            <div ref={trackRef} className="group relative overflow-hidden">
               {/* Invisible sizer: every testimonial is stacked in the same grid
                   cell so the box is always as tall as the longest one — this
                   keeps the slideshow's footprint constant as slides change,
@@ -170,7 +153,7 @@ export function Testimonials() {
                     type="button"
                     onClick={() => goTo(index - 1)}
                     aria-label="Previous testimonial"
-                    className="absolute left-0 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:left-2"
+                    className="absolute left-0 top-1/2 hidden -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink opacity-0 outline-none transition hover:text-clay focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-clay sm:left-2 sm:flex sm:group-hover:opacity-100"
                   >
                     <Arrow direction="left" />
                   </button>
@@ -178,7 +161,7 @@ export function Testimonials() {
                     type="button"
                     onClick={() => goTo(index + 1)}
                     aria-label="Next testimonial"
-                    className="absolute right-0 top-1/2 flex -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:right-2"
+                    className="absolute right-0 top-1/2 hidden -translate-y-1/2 cursor-pointer items-center justify-center p-2 text-ink opacity-0 outline-none transition hover:text-clay focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-clay sm:right-2 sm:flex sm:group-hover:opacity-100"
                   >
                     <Arrow direction="right" />
                   </button>
@@ -187,20 +170,40 @@ export function Testimonials() {
             </div>
 
             {count > 1 && (
-              <div className="mt-6 flex items-center justify-center gap-2.5">
-                {testimonials.map((item, i) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => goTo(i)}
-                    aria-label={`Show testimonial from ${item.name}`}
-                    aria-current={i === index}
-                    className={
-                      'h-2 w-2 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-clay ' +
-                      (i === index ? 'bg-clay' : 'bg-line hover:bg-clay-soft')
-                    }
-                  />
-                ))}
+              <div className="mt-6 flex items-center justify-center gap-4 sm:gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => goTo(index - 1)}
+                  aria-label="Previous testimonial"
+                  className="flex cursor-pointer items-center justify-center p-1 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:hidden"
+                >
+                  <Arrow direction="left" size={18} />
+                </button>
+
+                <div className="flex items-center gap-2.5">
+                  {testimonials.map((item, i) => (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => goTo(i)}
+                      aria-label={`Show testimonial from ${item.name}`}
+                      aria-current={i === index}
+                      className={
+                        'h-2 w-2 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-clay ' +
+                        (i === index ? 'bg-clay' : 'bg-line hover:bg-clay-soft')
+                      }
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => goTo(index + 1)}
+                  aria-label="Next testimonial"
+                  className="flex cursor-pointer items-center justify-center p-1 text-ink outline-none transition-colors hover:text-clay focus-visible:ring-2 focus-visible:ring-clay sm:hidden"
+                >
+                  <Arrow direction="right" size={18} />
+                </button>
               </div>
             )}
           </div>
