@@ -131,7 +131,10 @@ export const testimonials = [
       'We have worked with McNelly Construction on a wide range of projects, from deck renovations, concrete and stone work, and interior construction to the construction of a 2,700-square-foot home. Every project has exceeded our expectations. Their pricing is competitive, fair, and transparent, and they consistently complete projects on schedule without compromising quality.\n\nThe craftsmanship and professionalism of the McNelly Construction team are outstanding. Their employees are courteous, respectful, and communicative throughout every phase of a project, making changes and decisions easy to navigate. We have complete confidence in their work and highly recommend McNelly Construction to anyone looking for a skilled, dependable, and professional contractor.',
     name: 'Paul & Erica Miner',
     title: '',
-    image: '/photos/testimonial-PaulMiner.png',
+    image: '/photos/testimonial-PaulMiner.jpg',
+    imageMaxWidth: 480,
+    imageAspect: '48 / 52',
+    imagePosition: 'top',
     wide: true,
   },
 ] as const

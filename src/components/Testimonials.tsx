@@ -29,14 +29,21 @@ type Testimonial = (typeof testimonials)[number]
 function SlideContent({ t }: { t: Testimonial }) {
   return (
     <>
-      <picture className="block w-full overflow-hidden">
+      <picture
+        className={'block overflow-hidden' + ('imageMaxWidth' in t ? ' mx-auto' : ' w-full')}
+        style={'imageMaxWidth' in t ? { maxWidth: t.imageMaxWidth, width: '100%' } : undefined}
+      >
         <source srcSet={webp(t.image)} type="image/webp" />
         <img
           src={t.image}
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="aspect-[16/9] w-full object-cover"
+          className={'imageAspect' in t ? 'w-full object-cover' : 'aspect-[16/9] w-full object-cover'}
+          style={{
+            ...('imageAspect' in t ? { aspectRatio: t.imageAspect } : null),
+            ...('imagePosition' in t ? { objectPosition: t.imagePosition } : null),
+          }}
           draggable={false}
         />
       </picture>
